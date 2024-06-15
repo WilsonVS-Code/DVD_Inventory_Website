@@ -8,6 +8,7 @@ import string
 
 app = Flask(__name__, static_url_path ='/static')
 
+# THE VERY FIRST COMMIT
 # Set a secret key for the application
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 
