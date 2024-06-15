@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        /* styles.css */
+        .sidebar {
+            width: 200px;
+            height: 100%;
+            position: fixed;
+            top: 0;
+            left: -200px; /* Initially hidden */
+            background-color: #dddddd;
+            overflow-x: hidden;
+            transition: left 0.3s;
+        }
+
+        .hamburger {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 999; /* Ensure button is above other content */
+            background-color: transparent;
+            border: none;
+            color: black; /* Changed to black for better visibility */
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .main-content {
+            margin-left: 0;
+            transition: margin-left 0.3s;
+        }
+
+        /* Expanded sidebar styles */
+        .sidebar.expanded {
+            left: 0;
+        }
+
+        .main-content.expanded {
+            margin-left: 200px; /* Adjusted to match the sidebar width */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        #datetime {
+            font-family: Arial, sans-serif;
+            font-size: 18px;
+            color: #333;
+            margin-top: 10px;
+        }
+
+        #date {
+            font-weight: bold;
+        }
+
+        #time {
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .logout-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to the Dashboard, {{ user_name }}!</h1>
+    
+    <!-- Sidebar menu -->
+    <div class="sidebar" id="sidebar">
+        <ul>
+            <li><a href="{{ url_for('add_movie') }}">Add New Movie</a></li>
+            <li><a href="{{ url_for('add_customer') }}">Add New Customer</a></li>
+            <li><a href="{{ url_for('add_staff') }}">Add New Staff</a></li>
+            <li><a href="{{ url_for('rent_dvds') }}">Renting DVDs</a></li>
+            <!-- Add more menu options as needed -->
+        </ul>
+    </div>
+
+    <!-- Hamburger button -->
+    <button class="hamburger" id="hamburger-btn">&#9776;</button>
+
+    <div id="datetime">
+        <span id="date"></span> 
+        <span id="time"></span>
+    </div>
+
+    <script>
+        function updateDateTime() {
+            var now = new Date();
+            var dateElement = document.getElementById('date');
+            var timeElement = document.getElementById('time');
+    
+            // Format the date and time
+            dateElement.textContent = now.toLocaleDateString();
+            timeElement.textContent = now.toLocaleTimeString();
+        }
+    
+        // Update date and time initially
+        updateDateTime();
+    
+        // Update date and time every second
+        setInterval(updateDateTime, 1000);
+
+        // Toggle sidebar visibility
+        document.getElementById('hamburger-btn').onclick = function() {
+            var sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('expanded');
+            console.log('Sidebar toggled:', sidebar.classList.contains('expanded')); // Debugging line
+        }
+    </script>
+
+    <!-- Add this above the movie details table -->
+    <h2>Search Movies</h2>
+    <form action="{{ url_for('search_movies') }}" method="GET">
+        <label for="search_query">Search by Movie Title/Movie Barcode:</label>
+        <input type="text" id="search_query" name="search_query" placeholder="Enter title/barcode">
+        <button type="submit">Search</button>
+    </form>
+    
+    <h2>Movie Details</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Movie ID</th>
+                <th>Title</th>
+                <th>Release Year</th>
+                <th>Director</th>
+                <th>Rating</th>
+                <th>Duration</th>
+                <th>Quantity</th>
+                <th>Movie Barcode</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for movie in movies %}
+            <tr>
+                <td>{{ movie.Movie_ID }}</td>
+                <td>{{ movie.Title }}</td>
+                <td>{{ movie.Release_Year }}</td>
+                <td>{{ movie.Director }}</td>
+                <td>{{ movie.Rating }}</td>
+                <td>{{ movie.Duration }}</td>
+                <td>{{ movie.Quantity }}</td>
+                <td>{{ movie.Movie_Barcode }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <!-- Logout button positioned at the top right corner --> 
+    <div class="logout-button">
+        <form action="{{ url_for('logout') }}" method="POST">
+            <button type="submit">Logout</button>
+        </form>
+    </div>
+</body>
+</html>

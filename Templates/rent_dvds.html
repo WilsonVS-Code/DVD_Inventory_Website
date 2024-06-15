@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Rent DVDs</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+    <script>
+        function identifyCustomer() {
+            const phone_number = document.getElementById('phone_number').value;
+
+            fetch('/rent_dvds', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `phone_number=${encodeURIComponent(phone_number)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    document.getElementById('customer_id').innerText = data.customer_id;
+                    document.getElementById('customer_name').innerText = data.customer_name;
+                    document.getElementById('rent_date').innerText = new Date().toLocaleDateString();
+                }
+            });
+        }
+
+        function checkout() {
+            const customer_id = document.getElementById('customer_id').innerText;
+            const customer_name = document.getElementById('customer_name').innerText;
+            const rent_date = document.getElementById('rent_date').innerText;
+            
+            fetch('/rental_checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    customer_id: customer_id,
+                    customer_name: customer_name,
+                    rent_date: rent_date
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Rental transaction completed successfully.');
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            });
+        }
+    </script>
+</head>
+<body>
+    <h1>Rent DVDs</h1>
+
+    <h2>Identify Customer by Phone Number</h2>
+    <input type="text" id="phone_number" placeholder="Enter phone number">
+    <button onclick="identifyCustomer()">Identify</button>
+
+    <div id="customer_info">
+        <h3>Customer ID: <span id="customer_id"></span></h3>
+        <h3>Customer Name: <span id="customer_name"></span></h3>
+        <h3>Rental Date: <span id="rent_date"></span></h3>
+    </div>
+
+    <button onclick="checkout()">Checkout</button>
+</body>
+</html>

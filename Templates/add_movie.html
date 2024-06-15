@@ -1,0 +1,40 @@
+<!-- add_movie.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New Movie</title>
+</head>
+<body>
+    <h1>Add New Movie</h1>
+    <form action="/add_movie" method="POST">
+        <label for="movie_name">Movie Name:</label>
+        <input type="text" id="movie_name" name="movie_name" required><br>
+        <label for="movie_barcode">Movie Barcode:</label>
+        <input type="text" id="movie_barcode" name="movie_barcode" required><br>
+        <button type="submit">Search Movie Details</button>
+    </form>
+    
+    {% if movie_details %}
+    <h2>Movie Details</h2>
+    <ul>
+        <li><strong>Title:</strong> {{ movie_details.Title }}</li>
+        <li><strong>Year:</strong> {{ movie_details.Year }}</li>
+        <li><strong>Director:</strong> {{ movie_details.Director }}</li>
+        <li><strong>Rating:</strong> {{ movie_details.Rating }}</li>
+        <li><strong>Runtime:</strong> {{ movie_details.Runtime }}</li>
+    </ul>
+    <form action="/update_movie" method="POST">
+        <input type="hidden" name="title" value="{{ movie_details.Title }}">
+        <input type="hidden" name="year" value="{{ movie_details.Year }}">
+        <input type="hidden" name="director" value="{{ movie_details.Director }}">
+        <input type="hidden" name="rating" value="{{ movie_details.Rating }}">
+        <input type="hidden" name="runtime" value="{{ movie_details.Runtime }}">
+        <input type="hidden" name="barcode" value="{{ movie_barcode }}">
+        <button type="submit">Add Movie</button>
+    </form>
+    {% endif %}
+</body>
+</html>
