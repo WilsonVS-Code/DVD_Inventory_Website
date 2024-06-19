@@ -1,7 +1,7 @@
 # app.py
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from datetime import datetime, timedelta
-import imdb 
+import imdb
 import pyodbc
 import random
 import string
@@ -12,7 +12,7 @@ app = Flask(__name__, static_url_path ='/static')
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 
 # Replace DATABASE_CONNECTION_STRING with your actual connection string
-conn_str = r'Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ= C:\Users\Systems\Documents\DVD Database Project\Movie_Database.accdb;'
+conn_str = r'Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ= C:\Users\Systems\Documents\DVD_Inventory_Website\Movie_Database.accdb;'
 conn = pyodbc.connect(conn_str)
 cursor = conn.cursor()
 
