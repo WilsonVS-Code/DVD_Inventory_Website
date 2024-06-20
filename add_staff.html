@@ -1,0 +1,38 @@
+<!-- add_staff.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New Staff</title>
+</head>
+<body>
+    {% with messages = get_flashed_messages(with_categories=True) %}
+        {% if messages %}
+            <div>
+                {% for category, message in messages %}
+                    <p class="{{ category }}">{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+    <h1>Adding New Staff</h1>
+    <form action="/add_staff" method="POST">
+
+        <label for="Staff_FirstName">Staff First Name:</label>
+        <input type="text" id="Staff_FirstName" name="Staff_FirstName" required><br>
+
+        <label for="Staff_LastName">Staff Last Name:</label>
+        <input type="text" id="Staff_LastName" name="Staff_LastName" required><br>
+
+        <label for="Staff_Username">Staff Username:</label>
+        <input type="text" id="Staff_Username" name="Staff_Username" required><br>
+
+        <label for="Staff_Password">Staff Password:</label>
+        <input type="text" id="Staff_Password" name="Staff_Password" required><br>
+
+        <button type="submit">Add Staff Details</button>
+    </form>
+</body>
+</html>
