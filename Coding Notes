@@ -1,0 +1,4 @@
+## the following code allows a pop up message to be displayed
+# except Exception as e:
+#     print("Error executing SQL query:", e)
+#     return jsonify({'error': 'Database query error'})
