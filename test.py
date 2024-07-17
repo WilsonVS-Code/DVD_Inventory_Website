@@ -1,56 +1,128 @@
-# Handles movie barcode scanning and populate the table with movie rental details
-@app.route('/scan_movie', methods=['POST'])
-def scan_movie():
-    barcode = request.form.get('barcode')
-    print("Received barcode:", barcode)  # Debugging statement
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Rent DVDs</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Rent DVDs</h1>
+    <form id="rentalForm" method="post" action="/get_customer_details">
+        <h2>Identify Customer by Phone Number</h2>
+        <input type="text" id="phone_number" name="phone_number" placeholder="Enter phone number">
+        <button type="submit">Identify</button>
+    </form>
 
-    try:
-        # Fetch movie details
-        cursor.execute("SELECT Movie_ID, Title FROM Movies WHERE Movie_Barcode = ?", (barcode,))
-        movie = cursor.fetchone()
-        print("Fetched movie details:", movie)  # Debugging statement
+    {% if customer_id and customer_name %}
+    <div id="customer_info">
+        <h3>Customer ID: <span id="customer_id">{{ customer_id }}</span></h3>
+        <h3>Customer Name: <span id="customer_name">{{ customer_name }}</span></h3>
+        <h3>Rental Date: <span id="rent_date">{{ rent_date }}</span></h3>
+    </div>
 
-        if not movie:
-            return jsonify({'error': 'Movie not found'})
+    <div id="movie_scan">
+        <h2>Scan Movie Barcode</h2>
+        <input type="text" id="barcode" placeholder="Enter movie barcode">
+        <button type="button" onclick="scanMovie()">Scan</button>
+    </div>
 
-        movie_id = movie.Movie_ID
-        movie_title = movie.Title
+    <h2>Movie Rental List                                                                                                                                     </h2>
+    <table id="movies_table">
+        <thead>
+            <tr>
+                <th>Movie ID</th>
+                <th>Title</th>
+                <th>Rental Date</th>
+                <th>Return Date</th>
+                <th>Quantity</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Rows will be added here dynamically -->
+        </tbody>
+    </table>
 
-        # Check inventory availability
-        cursor.execute("SELECT Inventory_Availability FROM Inventory WHERE Movie_ID = ?", (movie_id,))
-        inventory = cursor.fetchone()
-        if not inventory or inventory.Inventory_Availability <= 0:
-            return jsonify({'error': 'Movie is fully RENTED OUT'})
+    <button onclick="checkout()">Checkout</button>
+    {% elif error %}
+    <p>{{ error }}</p>
+    {% endif %}
+    
+    <script>
+        function scanMovie() {
+            const barcode = document.getElementById('barcode').value;
+            const formData = new FormData();
+            formData.append('barcode', barcode);
 
-        # Update inventory availability
-        new_availability = inventory.Inventory_Availability - 1
-        cursor.execute("UPDATE Inventory SET Inventory_Availability = ? WHERE Movie_ID = ?", (new_availability, movie_id))
-        conn.commit()
-
-        rent_date = date.today()
-        return_date = rent_date + timedelta(weeks=1)
-
-        if 'rented_movies' not in session:
-            session['rented_movies'] = []
-
-        movie_found = False
-        for rented_movie in session['rented_movies']:
-            if rented_movie['movie_id'] == movie_id:
-                rented_movie['quantity'] += 1
-                movie_found = True
-                break
-
-        if not movie_found:
-            session['rented_movies'].append({
-                'movie_id': movie_id,
-                'movie_title': movie_title,
-                'rent_date': rent_date.strftime("%Y-%m-%d"),
-                'return_date': return_date.strftime("%Y-%m-%d"),
-                'quantity': 1
+            fetch('/scan_movie', {
+                method: 'POST',
+                body: formData
             })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    const tbody = document.getElementById('movies_table').querySelector('tbody');
+                    tbody.innerHTML = ''; // Clear existing rows
 
-        return jsonify(session['rented_movies'])
+                    data.forEach(movie => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${movie.movie_id}</td>
+                            <td>${movie.movie_title}</td>
+                            <td>${movie.rent_date}</td>
+                            <td>${movie.return_date}</td>
+                            <td>${movie.quantity}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            });
+        }
 
-    except Exception as e:
-        print("Error executing SQL query:", e)
-        return jsonify({'error': 'Database query error'})
+        function checkout() {
+            const customer_id = document.getElementById('customer_id').innerText;
+            const customer_name = document.getElementById('customer_name').innerText;
+            const rent_date = document.getElementById('rent_date').innerText;
+            const movies = Array.from(document.querySelectorAll('#movies_table tbody tr')).map(row => {
+                const cells = row.querySelectorAll('td');
+                return {
+                    movie_id: cells[0].innerText,
+                    movie_title: cells[1].innerText,
+                    rent_date: cells[2].innerText,
+                    return_date: cells[3].innerText,
+                    quantity: cells[4].innerText
+                };
+            });
+            
+            fetch('/rental_checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ customer_id, customer_name, rent_date, movies })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Rental transaction completed successfully.');
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            });
+        }
+    </script>
+</body>
+</html>

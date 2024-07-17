@@ -25,26 +25,49 @@ def index():
     error_message = request.args.get('error_message', '')
     return render_template('login.html', error_message=error_message)
     
+## DONT DELETE THIS CODE TILL IT IS RESOLVED 
+# # Retrieving Username and Password Inputs and Checking with the Database before moving to the next page.
+# @app.route('/login', methods=['POST'])
+# def login():
+#     username = request.form.get('username')
+#     password = request.form.get('password')
     
-# Retrieving Username and Password Inputs and Checking with the Database before moving to the next page.
+#     # Check if the provided username and password match in the Access database
+#     cursor.execute("SELECT * FROM Staff WHERE Staff_Username = ? AND Staff_Password = ?",username, password)
+#     user = cursor.fetchone()
+
+#     if user:
+#     # Successful login, redirect to a new page or perform additional actions
+#         # The Name of the user is located at the second column of the Users table (index 1)
+#         session['user_name'] = user[1]
+#         return redirect(url_for('dashboard'))
+#     else:
+#         # Invalid credentials, redirect back to the login page with an error message
+#         error_message = 'Invalid Username and/or Password!'
+#         return redirect(url_for('index', error_message=error_message))
+
 @app.route('/login', methods=['POST'])
 def login():
     username = request.form.get('username')
     password = request.form.get('password')
     
     # Check if the provided username and password match in the Access database
-    cursor.execute("SELECT * FROM Staff WHERE Staff_Username = ? AND Staff_Password = ?",username, password)
-    user = cursor.fetchone()
+    cursor.execute("SELECT Staff_ID, Staff_FirstName FROM Staff WHERE Staff_Username = ? AND Staff_Password = ?", (username, password))
+    staff = cursor.fetchone()
 
-    if user:
-    # Successful login, redirect to a new page or perform additional actions
-        # The Name of the user is located at the second column of the Users table (index 1)
-        session['user_name'] = user[1]
+    if staff:
+        # Successful login, store staff ID and redirect to dashboard
+        session['staff_id'] = staff[0]  # Access tuple elements by index
+        session['staff_name'] = staff[1]  # Access tuple elements by index
         return redirect(url_for('dashboard'))
     else:
         # Invalid credentials, redirect back to the login page with an error message
         error_message = 'Invalid Username and/or Password!'
         return redirect(url_for('index', error_message=error_message))
+
+
+
+
 
 
 # Defining the structure of the Movie Table (The structure in the database)
@@ -64,7 +87,7 @@ class Movie:
 @app.route('/dashboard')
 def dashboard():
     # Retrieve the users name from the session
-    user_name = session.get('user_name')
+    user_name = session.get('staff_name')
 
     # Retrieve movie details from the database
     cursor.execute("SELECT * FROM Movies")
@@ -192,6 +215,10 @@ def add_staff_post():
 # Handles customer identification and initial form rendering.
 @app.route('/get_customer_details', methods=['GET', 'POST'])
 def get_customer_details():
+    # Clear the session data
+    session.pop('rented_movies', None)
+    session.modified = True
+
     if request.method == 'POST':
         phone_number = request.form.get('phone_number')
         print("Received phone number:", phone_number)  # Debugging statement
@@ -202,7 +229,6 @@ def get_customer_details():
         print("Fetched customer details:", customer)  # Debugging statement
         
         if customer:
-            session.clear()  # Clear session data
             # Store customer details in session for further use
             session['customer_id'] = customer[0]  # Access tuple elements by index
             session['customer_name'] = f"{customer[1]} {customer[2]}"
@@ -214,7 +240,8 @@ def get_customer_details():
             return render_template('get_customer_details.html', 
                                    customer_id=session['customer_id'], 
                                    customer_name=session['customer_name'],
-                                   rent_date=rent_date)
+                                   rent_date=rent_date,
+                                   staff_id=session.get('staff_id'))  # Pass staff ID
     
         else:
             # If customer not found, display a message or handle the error
@@ -222,6 +249,8 @@ def get_customer_details():
     
     # For GET request, just render the template without any data
     return render_template('get_customer_details.html')
+
+
 
 
 
@@ -239,17 +268,17 @@ def scan_movie():
         if not movie:
             return jsonify({'error': 'Movie not found'})
 
-        movie_id = movie.Movie_ID
-        movie_title = movie.Title
+        movie_id = movie[0]  # Access tuple elements by index
+        movie_title = movie[1]
 
         # Check inventory availability
         cursor.execute("SELECT Inventory_Availability FROM Inventory WHERE Movie_ID = ?", (movie_id,))
         inventory = cursor.fetchone()
-        if not inventory or inventory.Inventory_Availability <= 0:
+        if not inventory or inventory[0] <= 0:
             return jsonify({'error': 'Movie is fully RENTED OUT'})
 
         # Update inventory availability
-        new_availability = inventory.Inventory_Availability - 1
+        new_availability = inventory[0] - 1
         cursor.execute("UPDATE Inventory SET Inventory_Availability = ? WHERE Movie_ID = ?", (new_availability, movie_id))
         conn.commit()
 
@@ -273,7 +302,8 @@ def scan_movie():
                 'movie_title': movie_title,
                 'rent_date': rent_date.strftime("%Y-%m-%d"),
                 'return_date': return_date.strftime("%Y-%m-%d"),
-                'quantity': 1
+                'quantity': 1,
+                'barcode': barcode
             })
 
         # Ensure the session is saved after modification
@@ -287,186 +317,61 @@ def scan_movie():
 
 
 
+@app.route('/checkout', methods=['POST'])
+def checkout():
+    try:
+        customer_id = session.get('customer_id')
+        customer_name = session.get('customer_name')
+        staff_id = session.get('staff_id')
+        rented_movies = request.json.get('movies', [])
 
 
+        if not customer_id or not customer_name or not staff_id or not rented_movies:
+            return jsonify({'error': 'Missing customer or rental information'})
 
+        rental_date = date.today()
+        return_date = rental_date + timedelta(weeks=1)
 
+        # Insert rental record into the Rentals table
+        cursor.execute("""
+            INSERT INTO Rentals (Customer_ID, Customer_Name, Rental_Date, Return_Date, Staff_ID)
+            VALUES (?, ?, ?, ?, ?)
+        """, (customer_id, customer_name, rental_date, return_date, staff_id))
+        conn.commit()
 
+        # Retrieve the last inserted Rental_ID
+        cursor.execute("SELECT MAX(Rental_ID) FROM Rentals")
+        rental_id = cursor.fetchone()[0]
 
+        # Debugging: Print rented movies
+        print("Rented movies data:", rented_movies)
 
+        # Find the inventory Id of the movie being borrowed
+        cursor.execute("SELECT Inventory_ID FROM Inventory WHERE Movie_Barcode = ?", (barcode,))
 
 
+        # Insert rental details and update inventory
+        for movie in rented_movies:
+            if 'movie_id' not in movie or 'movie_title' not in movie or 'barcode' not in movie or 'quantity' not in movie:
+                return jsonify({'error': 'Invalid movie data format'})
 
+            cursor.execute("""
+                INSERT INTO Rental_Details (Rental_ID, Movie_ID, Inventory_ID, Movie_Title, Movie_Barcode, Quantity)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (rental_id, movie['movie_id'], movie['movie_title'], movie['barcode'], movie['quantity']))
 
 
+        conn.commit()
 
+        # Clear session rented movies
+        session.pop('rented_movies', None)
+        session.modified = True
 
+        return jsonify({'success': 'Rental Transaction Successful!'})
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# @app.route('/scan_movie', methods=['POST'])
-# def scan_movie():
-#     barcode = request.form.get('barcode')
-#     print("Received barcode:", barcode)  # Debugging statement
-
-#     try:
-#         cursor.execute("SELECT Movie_ID, Title FROM Movies WHERE Movie_Barcode = ?", (barcode,))
-#         movie = cursor.fetchone()
-#         print("Fetched movie details:", movie)  # Debugging statement
-#     except Exception as e:
-#         print("Error executing SQL query:", e)
-#         return jsonify({'error': 'Database query error'})
-
-#     if movie:
-#         rent_date = date.today()
-#         return_date = rent_date + timedelta(weeks=1)
-        
-#         if 'rented_movies' not in session:
-#             session['rented_movies'] = []
-
-#         movie_found = False
-#         for rented_movie in session['rented_movies']:
-#             if rented_movie['movie_id'] == movie[0]:
-#                 rented_movie['quantity'] += 1
-#                 movie_found = True
-#                 break
-
-#         if not movie_found:
-#             session['rented_movies'].append({
-#                 'movie_id': movie[0],
-#                 'movie_title': movie[1],
-#                 'rent_date': rent_date.strftime("%Y-%m-%d"),
-#                 'return_date': return_date.strftime("%Y-%m-%d"),
-#                 'quantity': 1
-#             })
-
-#         return jsonify(session['rented_movies'])
-#     else:
-#         return jsonify({'error': 'Movie not found'})
-
-
-
-
-
-
-
-
-
-
-## A table that records the movie details for a rental transaction.
-# @app.route('/get_movie_details', methods=['POST'])
-# def get_movie_details():
-#     barcode = request.form.get('barcode')
-#     print(f"Received barcode: {barcode}")
-
-#     # Fetch movie details from the database
-#     cursor.execute("SELECT Movie_ID, Title, Movie_Barcode FROM Movies WHERE Movie_Barcode = ?", (barcode,))
-#     movie = cursor.fetchone()
-    
-#     if movie:
-#         movie_details = {
-#             "Movie_ID": movie.Movie_ID,
-#             "Title": movie.Title,
-#             "Barcode": movie.Movie_Barcode
-#         }
-#         return jsonify(movie_details)
-#     else:
-#         return jsonify({"error": "Movie not found"}), 404
-
-# @app.route('/rental_checkout', methods=['POST'])
-# def rental_checkout():
-#     data = request.json
-#     customer_id = data.get('customer_id')
-#     customer_name = data.get('customer_name')
-#     rent_date_str = data.get('rent_date')
-
-#     rent_date = datetime.strptime(rent_date_str, '%m/%d/%Y')
-#     return_date = rent_date + timedelta(days=7)
-
-#     # Assuming you have a Rentals table in your database
-#     cursor.execute("INSERT INTO Rentals (Customer_ID, Customer_Name, Rental_Date, Return_Date) VALUES (?, ?, ?, ?)", 
-#                    (customer_id, customer_name, rent_date, return_date))
-    
-#     conn.commit()
-
-#     return jsonify({"success": True})
-
-
-
-
-# @app.route('/get_movie_details', methods=['POST'])
-# def get_movie_details():
-#     # Get the scanned barcode from the POST request
-#     movie_barcode = request.form.get('movie_barcode')
-
-#     # Fetch the movie details based on the barcode
-#     cursor.execute("SELECT Movie_ID, Title, Movie_Barcode FROM Movies WHERE Barcode = ?", (movie_barcode,))
-#     movie = cursor.fetchone()  # Fetch one record
-
-#     if movie:
-#         # Create a dictionary to send as a JSON response
-#         movie_details = {
-#             "Movie_ID": movie["Movie_ID"],
-#             "Title": movie["Title"],
-#             "Barcode": movie_barcode,
-#         }
-#         return jsonify(movie_details)  # Return as JSON
-#     else:
-#         return jsonify({"error": "Movie not found"}), 404  # Return an error if no movie found
-
-
-# @app.route('/borrow_multiple_dvds', methods=['POST'])
-# def borrow_multiple_dvds():
-#     customer_id = request.form.get('customer_id')
-#     borrow_date = datetime.now().date()
-#     due_date = borrow_date + timedelta(days=7)  # Example: 7-day borrowing period
-
-#     # A list of selected Movie_IDs
-#     movie_barcode = request.form.get('movie_barcode')
-
-
-#     # Create a new borrowing record
-#     cursor.execute(
-#         "INSERT INTO Borrowings (Customer_ID, Borrowing_Date, Due_Date) VALUES (?, ?, ?)",
-#         (customer_id, borrow_date, due_date)
-#     )
-#     borrowing_id = cursor.lastrowid  # Get the generated Borrowing_ID
-
-#     # Insert each Movie_ID into the Borrowing_Details table
-#     for movie_id in movie_ids:
-#         cursor.execute(
-#             "INSERT INTO Borrowing_Details (Borrowing_ID, Movie_ID, Movie_Title, Movie_Barcode) VALUES (?, ?, ?, ?)",
-#             (borrowing_id, movie_id, movie_title, movie_barcode)
-#         )
-    
-#     cursor.execute(
-#         "UPDATE Inventory SET Inventory_Availability = Inventory_Availability -1 WHERE Movie_Barcode =?",(movie_barcode,))
-    
-
-#     conn.commit()
-
-#     return redirect(url_for('some_page'))  # Redirect to a relevant page after borrowing
+    except Exception as e:
+        print("Error during checkout:", e)
+        return jsonify({'error': 'Checkout failed due to a database error'})
 
 
 # Function to check if a barcode already exists in the database
@@ -526,7 +431,6 @@ def insert_or_update_movie_details(movie_barcode, movie_name):
     # Commit the transaction after database operations
     conn.commit()
     print(f"Successfully inserted Movie into Inventory with barcode: {movie_barcode}")
-
 
 # Function to autogenerate a random password
 import random
