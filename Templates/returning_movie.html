@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Return DVDs</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Return DVDs</h1>
+    <form id="customerForm" method="post" action="/get_rental_details">
+        <h2>Enter Customer Phone Number</h2>
+        <input type="text" id="phone_number" name="phone_number" placeholder="Enter phone number">
+        <button type="submit">Retrieve Rentals</button>
+    </form>
+
+    <div id="customer_info" style="display: none;">
+        <h3>Customer Name: <span id="customer_name"></span></h3>
+        <h3>Phone Number: <span id="phone_number_display"></span></h3>
+    </div>
+
+    <div id="movie_scan" style="display: none;">
+        <h2>Scan DVD Barcode</h2>
+        <input type="text" id="barcode" placeholder="Enter movie barcode">
+        <button type="button" onclick="scanMovie()">Scan</button>
+    </div>
+
+    <h2>Rented DVDs</h2>
+    <table id="rental_table" style="display: none;">
+        <thead>
+            <tr>
+                <th>Rental ID</th>
+                <th>Movie Title</th>
+                <th>Barcode</th>
+                <th>Quantity</th>
+                <th>Status</th>
+                <th>Return Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Dynamically filled with rented movie details -->
+        </tbody>
+    </table>
+
+    <button id="return_button" style="display: none;" onclick="processReturn()">Return DVDs</button>
+
+    <script>
+        function scanMovie() {
+            const barcode = document.getElementById('barcode').value;
+            const formData = new FormData();
+            formData.append('barcode', barcode);
+
+            fetch('/scan_rental', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    const table = document.getElementById('rental_table');
+                    table.style.display = "block";
+
+                    const tbody = table.querySelector('tbody');
+                    tbody.innerHTML = ''; // Clear any existing rows
+                    
+                    data.rentals.forEach(rental => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${rental.rental_id}</td>
+                            <td>${rental.movie_title}</td>
+                            <td>${rental.barcode}</td>
+                            <td>${rental.quantity}</td>
+                            <td>${rental.status}</td>
+                            <td>${rental.return_date}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+
+                    document.getElementById('return_button').style.display = "block";
+                }
+            });
+        }
+
+        function processReturn() {
+            fetch('/process_return', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    rentals: Array.from(document.querySelectorAll('#rental_table tbody tr')).map(row => {
+                        const cells = row.querySelectorAll('td');
+                        return {
+                            rental_id: cells[0].innerText,
+                            barcode: cells[2].innerText
+                        };
+                    })
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Return Process Completed Successfully!');
+                    location.reload();
+                } else {
+                    alert('Error during return process: ' + data.error);
+                }
+            });
+        }
+    </script>
+</body>
+</html>

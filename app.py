@@ -17,6 +17,14 @@ conn = pyodbc.connect(conn_str)
 cursor = conn.cursor()
 
 
+
+@app.before_request
+def clear_session_on_load():
+    if 'rented_movies' in session:
+        session.pop('rented_movies', None)
+        session.modified = True
+
+        
 # ROUTES 
 # Routes for Login Purposes 
 # The ROOT URL (need this to initiate the whole website) represented by ('/')
@@ -257,6 +265,7 @@ def get_customer_details():
 @app.route('/scan_movie', methods=['POST'])
 def scan_movie():
     barcode = request.form.get('barcode')
+    session['barcode'] = barcode
     print("Received barcode:", barcode)  # Debugging statement
 
     try:
@@ -269,11 +278,15 @@ def scan_movie():
             return jsonify({'error': 'Movie not found'})
 
         movie_id = movie[0]  # Access tuple elements by index
+        print("Movie ID:", movie_id)
         movie_title = movie[1]
+        print("Movie Title:", movie_title)
 
         # Check inventory availability
         cursor.execute("SELECT Inventory_Availability FROM Inventory WHERE Movie_ID = ?", (movie_id,))
         inventory = cursor.fetchone()
+        print("Fetched inventory details:", inventory)  # Debugging statement
+
         if not inventory or inventory[0] <= 0:
             return jsonify({'error': 'Movie is fully RENTED OUT'})
 
@@ -317,6 +330,7 @@ def scan_movie():
 
 
 
+
 @app.route('/checkout', methods=['POST'])
 def checkout():
     try:
@@ -325,18 +339,20 @@ def checkout():
         staff_id = session.get('staff_id')
         rented_movies = request.json.get('movies', [])
 
-
         if not customer_id or not customer_name or not staff_id or not rented_movies:
             return jsonify({'error': 'Missing customer or rental information'})
 
         rental_date = date.today()
         return_date = rental_date + timedelta(weeks=1)
 
+        # Set default rental status to 'Due'
+        rental_status = 'Due'
+
         # Insert rental record into the Rentals table
         cursor.execute("""
-            INSERT INTO Rentals (Customer_ID, Customer_Name, Rental_Date, Return_Date, Staff_ID)
-            VALUES (?, ?, ?, ?, ?)
-        """, (customer_id, customer_name, rental_date, return_date, staff_id))
+            INSERT INTO Rentals (Customer_ID, Customer_Name, Rental_Date, Return_Date, Staff_ID, Status)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (customer_id, customer_name, rental_date, return_date, staff_id, rental_status))
         conn.commit()
 
         # Retrieve the last inserted Rental_ID
@@ -345,21 +361,28 @@ def checkout():
 
         # Debugging: Print rented movies
         print("Rented movies data:", rented_movies)
-
-        # Find the inventory Id of the movie being borrowed
-        cursor.execute("SELECT Inventory_ID FROM Inventory WHERE Movie_Barcode = ?", (barcode,))
-
-
+        
         # Insert rental details and update inventory
         for movie in rented_movies:
             if 'movie_id' not in movie or 'movie_title' not in movie or 'barcode' not in movie or 'quantity' not in movie:
                 return jsonify({'error': 'Invalid movie data format'})
+            
+            # Extract the inventory_Id based on the movie barcode
+            cursor.execute("SELECT Inventory_ID FROM Inventory WHERE Movie_Barcode = ?", (movie['barcode'],))
+            inventory_id = cursor.fetchone()
 
+            # Check if the Inventory_ID was found
+            if not inventory_id:
+                return jsonify({'error': f"Inventory not found for movie with barcode {movie['barcode']}"})
+
+            # Set the default status for each movie as 'Due'
+            movie_status = 'Due'
+
+            # Insert the details into the Rental_Details table
             cursor.execute("""
-                INSERT INTO Rental_Details (Rental_ID, Movie_ID, Inventory_ID, Movie_Title, Movie_Barcode, Quantity)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (rental_id, movie['movie_id'], movie['movie_title'], movie['barcode'], movie['quantity']))
-
+                INSERT INTO Rental_Details (Rental_ID, Movie_ID, Movie_Title, Movie_Barcode, Quantity, Inventory_ID, Status)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (rental_id, movie['movie_id'], movie['movie_title'], movie['barcode'], movie['quantity'], inventory_id[0], movie_status))
 
         conn.commit()
 
@@ -372,6 +395,198 @@ def checkout():
     except Exception as e:
         print("Error during checkout:", e)
         return jsonify({'error': 'Checkout failed due to a database error'})
+
+
+
+# Route for fetching rental details based on customer phone number
+@app.route('/get_rental_details', methods=['POST', 'GET'])
+def get_rental_details():
+    if request.method == 'POST':
+        try:
+            phone_number = request.form.get('phone_number')
+            print("Phone Number Entered:", phone_number)  # DEBUG: Check phone number input
+
+            # Fetch customer details based on phone number
+            cursor.execute("SELECT Customer_ID, Customer_FirstName, Customer_LastName FROM Customers WHERE Phone_Number = ?", (phone_number,))
+            customer = cursor.fetchone()
+            print("Customer Fetched:", customer)  # DEBUG: Check if customer is fetched
+
+            if not customer:
+                return render_template('rental_details.html', error='Customer not found')
+
+            customer_id = customer[0]
+            customer_name = customer[1]
+
+            # Fetch all active rentals for this customer
+            cursor.execute("""
+                SELECT Rentals.Rental_ID, Rental_Details.Movie_Title, Rental_Details.Movie_Barcode, Rental_Details.Quantity, 
+                       Rental_Details.Status, Rentals.Return_Date
+                FROM Rentals
+                INNER JOIN Rental_Details ON Rentals.Rental_ID = Rental_Details.Rental_ID
+                WHERE Rentals.Customer_ID = ? AND Rental_Details.Status != 'Completed'
+            """, (customer_id,))
+            rentals = cursor.fetchall()
+            print("Rentals Fetched:", rentals)  # DEBUG: Check if rentals are fetched
+
+            if not rentals:
+                return render_template('rental_details.html', error='No active rentals found for this customer')
+
+            rental_data = [
+                {
+                    'rental_id': rental[0],
+                    'movie_title': rental[1],
+                    'barcode': rental[2],
+                    'quantity': rental[3],
+                    'status': rental[4],
+                    'return_date': rental[5]
+                }
+                for rental in rentals
+            ]
+
+            # Render the HTML template and pass the customer and rental data to it
+            return render_template('returning_movie.html', customer_name=customer_name, phone_number=phone_number, rentals=rental_data)
+
+        except Exception as e:
+            print("Error fetching rental details:", e)  # DEBUG: Error log
+            return render_template('returning_movie.html', error='Failed to retrieve rental details')
+
+    return render_template('returning_movie.html')  # Render the template initially without any data
+
+
+
+# Function that processes the returning of the DVDs (Updating the Status)
+@app.route('/process_return', methods=['POST'])
+def process_return():
+    try:
+        rental_data = request.json.get('rentals', [])
+
+        for rental in rental_data:
+            rental_id = rental['rental_id']
+            barcode = rental['barcode']
+
+            # Mark the DVD as returned (status = Completed)
+            cursor.execute("""
+                UPDATE Rental_Details
+                SET Status = 'Completed'
+                WHERE Rental_ID = ? AND Movie_Barcode = ?
+            """, (rental_id, barcode))
+
+            # Check if all movies in this rental are completed
+            cursor.execute("""
+                SELECT COUNT(*) FROM Rental_Details
+                WHERE Rental_ID = ? AND Status != 'Completed'
+            """, (rental_id,))
+            remaining_movies = cursor.fetchone()[0]
+
+            # Update the Rental Status
+            if remaining_movies == 0:
+                cursor.execute("UPDATE Rentals SET Rental_Status = 'Completed' WHERE Rental_ID = ?", (rental_id,))
+            else:
+                cursor.execute("""
+                    UPDATE Rentals SET Rental_Status = CASE 
+                        WHEN Return_Date < ? THEN 'Overdue' ELSE 'Due' END
+                    WHERE Rental_ID = ?
+                """, (date.today(), rental_id))
+
+        conn.commit()
+
+        return jsonify({'success': 'Return process completed successfully'})
+
+    except Exception as e:
+        conn.rollback()  # Rollback if error occurs
+        print("Error during return process:", e)
+        return jsonify({'error': 'Failed to process return'})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Function to update the rental Status in the Rental Databases
+def update_rental_status(rental_id):
+    try:
+        # Fetch all rental details for the given Rental_ID
+        cursor.execute("""
+            SELECT Movie_ID, Return_Date, Status 
+            FROM Rental_Details 
+            WHERE Rental_ID = ?
+        """, (rental_id,))
+        rental_details = cursor.fetchall()
+
+        today = date.today()
+        all_returned = True
+        any_overdue = False
+
+        # Check and update the status for each movie
+        for movie in rental_details:
+            movie_id = movie[0]
+            return_date = movie[1]
+            status = movie[2]
+
+            if status != 'Completed':
+                # Check if the movie is overdue or due
+                if return_date < today:
+                    new_status = 'Overdue'
+                    any_overdue = True
+                else:
+                    new_status = 'Due'
+                    all_returned = False
+
+                # Update the status if it has changed
+                if new_status != status:
+                    cursor.execute("""
+                        UPDATE Rental_Details 
+                        SET Status = ? 
+                        WHERE Rental_ID = ? AND Movie_ID = ?
+                    """, (new_status, rental_id, movie_id))
+                    conn.commit()
+
+        # Set the overall rental status based on the movies' statuses
+        if all_returned:
+            rental_status = 'Completed'
+        elif any_overdue:
+            rental_status = 'Overdue'
+        else:
+            rental_status = 'Due'
+
+        # Update the rental status in the Rentals table
+        cursor.execute("""
+            UPDATE Rentals 
+            SET Rental_Status = ? 
+            WHERE Rental_ID = ?
+        """, (rental_status, rental_id))
+        conn.commit()
+
+    except Exception as e:
+        print("Error updating rental status:", e)
+
+# Function to find the barcode for a given movie_id 
+def get_barcode_for_title(movies, movie_id):
+    for movie in movies:
+        if movie['movie_id'] == movie_id:
+            return movie['barcode']
+    return None
 
 
 # Function to check if a barcode already exists in the database

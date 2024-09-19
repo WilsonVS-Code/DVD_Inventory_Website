@@ -64,38 +64,52 @@
     {% endif %}
     
     <script>
-        function scanMovie() {
-            const barcode = document.getElementById('barcode').value;
-            const formData = new FormData();
-            formData.append('barcode', barcode);
+ function scanMovie() {
+    const barcode = document.getElementById('barcode').value;
+    const formData = new FormData();
+    formData.append('barcode', barcode);
 
-            fetch('/scan_movie', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert(data.error);
-                } else {
-                    const tbody = document.getElementById('movies_table').querySelector('tbody');
-                    tbody.innerHTML = ''; // Clear existing rows before adding the new row
+    fetch('/scan_movie', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert(data.error);
+        } else {
+            const tbody = document.getElementById('movies_table').querySelector('tbody');
 
-                    data.forEach(movie => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${movie.movie_id}</td>
-                            <td>${movie.movie_title}</td>
-                            <td>${movie.rent_date}</td>
-                            <td>${movie.return_date}</td>
-                            <td>${movie.quantity}</td>
-                            <td>${movie.barcode}</td>
-                        `;
-                        tbody.appendChild(row);
-                    });
+            // Check if the movie already exists in the table
+            let movieFound = false;
+            for (let row of tbody.rows) {
+                if (row.cells[5].innerText === barcode) {
+                    // Update the quantity
+                    let quantityCell = row.cells[4];
+                    quantityCell.innerText = parseInt(quantityCell.innerText) + 1;
+                    movieFound = true;
+                    break;
                 }
-            });
+            }
+
+            if (!movieFound) {
+                // If the movie does not exist, append a new row
+                data.forEach(movie => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${movie.movie_id}</td>
+                        <td>${movie.movie_title}</td>
+                        <td>${movie.rent_date}</td>
+                        <td>${movie.return_date}</td>
+                        <td>${movie.quantity}</td>
+                        <td>${movie.barcode}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
         }
+    });
+}
 
         function checkout() {
             const customer_id = document.getElementById('customer_id').innerText;
