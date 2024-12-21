@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sidebar Project</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
+    <style>
+		*{
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+@font-face {
+    font-family: poppins;
+    src: url(./Fonts/Poppins-Medium.ttf);
+}
+.main{
+    width: 100%;
+    height: 100vh;
+    background-color: rgb(235, 235, 235);
+    font-family: poppins;
+}
+
+        /* Search bar styling */
+        /* Edits the hamburger colour and colour of the sidebars title  */
+        .sidebar{
+            width: 260px;
+            height: 100vh;
+            background-color: black;
+            color: #fff;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            transition: all .6s ease;
+            padding-left: 20px;
+        }
+
+        .sidebar.expanded {
+            width: 250px; /* Adjust this to expand further to the right */
+        }
+
+        /* This adjusts the size of the icon */
+        .sidebar .uil{
+            font-size: 30px;
+        }
+
+        /* Top Row Started  */
+        .top-row{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        /* Sidebar header for DVD STORE */
+
+         /* Arrow Icon Styling */
+        .sidebar-arrow {
+            margin-top: 20px; /* Space after Delete Movie */
+            display: none; /* Initially hidden */
+            text-align: center;
+        }
+
+        .sidebar-arrow i {
+            font-size: 24px;
+            color: #ffffff;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        /* Sidebar arrow positioning */
+        .sidebar .sidebar-arrow {
+            display: none;  /* Default state: hidden */
+            color: white;
+            font-size: 24px;
+            position: absolute;
+            top: 600px;    /* Adjust this value as needed */
+            left: 90px;   /* Adjust this value as needed */
+            cursor: pointer;
+            background: none;  /* Remove background */
+            padding: 0;         /* Remove any padding */
+            border: none;       /* Remove border */
+        }
+
+        /* Hide left arrow when the sidebar is collapsed */
+        .sidebar.collapsed .sidebar-arrow {
+            display: none;
+        }
+        /* Show the left arrow when the sidebar is expanded */
+        .sidebar:not(.collapsed) .sidebar-arrow {
+            display: block;
+        }
+
+
+        /* Visbility and adjustments to the logo on the sidebar (top row) */
+        .logo{
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+            transition: all .5s ease;
+        }
+        .logo p{
+            margin-left: 6px;
+            font-size: 18px;
+        }
+        .store-title {
+            font-size: 24px; /* Adjust font size of 'DVD STORE' */
+            color: #0f0bf1; /* Set text color */
+            font-weight: bold; /* Make the text bold */
+            margin-left: 40px;  /* Adjust the space between the logo and the text */
+
+        }
+
+        /* Make sure the hamburger is only visible when the sidebar is being contracted */
+        .top-row .hamburgur{
+            display: none;
+        }
+
+        /* Middle Row Started  */
+        /* Manages the overall positioning of all the icons on the sidebar*/
+        .middle-row {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start; /* Ensures icons are aligned to the top */
+            align-items: flex-start; /* Align icons to the left of the sidebar */
+            gap: 20px; /* Controls spacing between the icons */
+            margin-top: 20px; /* Optional: Adjust space from the top of the sidebar */
+            padding: 0; /* Remove unnecessary padding */
+            margin-left: 15px;
+        }
+
+        .hamburger {
+            margin-left: 20px; /* Example margin for the hamburger button */
+        }
+        /*The padding changes the distance between each of the icons (the larger the padding the greater the gap*/
+        .middle-row li{
+            list-style: none;
+            position: relative;
+            padding-bottom: 10px; /* Move items upwards */
+            align-items: center;
+        }
+        /* Manages the colours of the Icons and words beside the icons */
+        .middle-row li a{
+            width: 100%;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 10px;
+            padding: 14px;
+            transition: all .5s ease;
+            
+        }
+        /* Manages the Colours of the icons, words and the icons when hovering the sidebar (both during contraction and expansion) */
+        .middle-row .links a:hover{
+            background-color: #fff;
+            color: #333;
+        }
+        .middle-row li a p{
+            margin-left: 12px;
+            transition: all .5s ease;
+
+        }
+        
+        .middle-row .search-bar{
+            background-color: rgba(255, 255, 255, 0.236);
+            border-radius: 10px;
+        }
+        .middle-row .search-bar input{
+            border: none;
+            outline: none;
+            background-color: transparent;
+            height: 100%;
+            color: #fff;
+            font-size: 16px;
+        }
+        ::placeholder{
+            color: #fff;
+        }
+        .middle-row li .outter-name{
+            position: absolute;
+            bottom: 50%;
+            left: 160%;
+            transform: translateY(50%);
+            background-color: #333;
+            color: #fff;
+            padding: 8px 15px;
+            border-radius: 6px;
+            white-space: nowrap;
+            transition: all .6s ease;
+            opacity: 0;
+        }
+        .active .middle-row li:hover .outter-name{
+            opacity: 1;
+        }
+        .active .bottom-row p{
+            display: none;
+        }
+
+        /* Active Sidebar Css */
+        /* The width controls the wideness of the sidebar during contraction (spaces between the icons and the end of the sidebar) */
+        /* The padding controls the animation (how far does the icons expands out and contracts) */
+        .active{
+            width: 120px;
+            padding: 30px 15px;
+        }
+        .active .top-row{
+            justify-content: center;
+        }
+        .active .top-row .logo{
+            display: none;
+            transition: all .5s ease;
+        }
+        .active .middle-row li a p{
+            display: none;
+        }
+        .active .middle-row li a{
+            justify-content: center;
+        }
+        .active .top-row .close{
+            display: none;
+        }
+        .active .top-row .hamburgur{
+            display: block;
+        }
+</style>
+</head>
+<!-- The following shows what is being displayed on the sidebar -->
+<body>
+    <div class="main">
+        <div class="sidebar">
+            <!-- Top Row -->
+            <div class="top-row">
+                <div class="logo">
+                    <span class="store-title">DVD STORE</span>
+                </div>
+                <i class="uil uil-bars hamburgur"></i>
+            </div>
+
+            <!-- MIddle Row -->
+            <div class="middle-row">
+                <li class="links">
+                    <a href="{{ url_for('dashboard') }}">
+                        <i class="uil uil-estate"></i>
+                        <p>Dashboard</p>
+                    </a>
+                    <span class="outter-name">Dashboard</span>
+                </li>
+
+                <li class="links">
+                    <a href="{{ url_for('add_movie') }}">
+                        <i class="uil uil-film"></i>
+                        <p>Add New Movie</p>
+                    </a>
+                    <span class="outter-name">Add New Movie</span>
+                </li>
+                <li class="links">
+                    <a href="{{ url_for('add_customer') }}">
+                        <i class="uil uil-user"></i>
+                        <p>Add New Customer</p>
+                    </a>
+                    <span class="outter-name">Add New Customer</span>
+                </li>
+                <li class="links">
+                    <a href="{{ url_for('add_staff') }}">
+                        <i class="uil uil-user-md"></i>
+                        <p>Add New Staff</p>
+                    </a>
+                    <span class="outter-name">Add New Staff</span>
+                </li>
+                <li class="links">
+                    <a href="{{ url_for('get_customer_details') }}">
+                        <i class="uil uil-arrow-circle-up"></i>
+                        <p>New Rentals</p>
+                    </a>
+                    <span class="outter-name">Add New Rentals</span>
+                </li>
+                <li class="links">
+                    <a href="{{ url_for('get_rental_details') }}">
+                        <i class="uil uil-arrow-circle-down"></i>
+                        <p>Rental_Returns</p>
+                    </a>
+                    <span class="outter-name">Rental Returns</span>
+                </li>
+                <li class="links">
+                    <a href="#">
+                        <i class="uil uil-trash-alt"></i>
+                        <p>Delete Movie</p>
+                    </a>
+                    <span class="outter-name">Delete Movie</span>
+                </li>
+            </div>
+            <div class="sidebar-arrow">
+                <button id="collapse-sidebar" class="collapse-btn">
+                    <i class="uil uil-arrow-circle-left"></i>
+                </button>
+            </div>
+        </div>
+
+
+
+
+    </div>
+
+    <script>
+        const sidebar = document.querySelector('.sidebar');
+        const hamburgerIcon = document.querySelector('.hamburgur');
+        const collapseButton = document.getElementById('collapse-sidebar'); 
+
+
+
+        // When the hamburger icon is clicked, expand the sidebar
+        hamburgerIcon.addEventListener('click', () => {
+            sidebar.classList.add('expanded');  // Add 'expanded' to expand the sidebar
+            sidebar.classList.remove('collapsed');  // Remove 'collapsed' to ensure it's not hidden
+            sidebar.classList.remove('active');  // Optionally remove 'active' if used
+        });
+
+        // Add event listener to collapse button
+        collapseButton.addEventListener('click', () => {
+            // Toggle the expanded and collapsed states
+            sidebar.classList.toggle('collapsed');  // Toggle 'collapsed' class when contracting
+            sidebar.classList.remove('expanded');   // Ensure 'expanded' class is removed when contracted
+            sidebar.classList.add('active');        // Keep 'active' class for the contracted state
+        });
+    </script>
+    
+</body>
+</html>

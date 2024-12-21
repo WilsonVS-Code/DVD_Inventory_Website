@@ -3,129 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Page</title>
-    <style>
-        /* Log In Page Background Styling */
-        body, html {
-            height: 100%;
-            margin: 0;
-            font-family: Arial, sans-serif;
-            overflow: hidden; /* Prevents scroll bars */
-        }
+    <title>DVD Rental Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 
-        .background {
-            position: absolute;
-            width: 100%; /* Adjust as needed */
-            height: 100%; /* Adjust as needed */
-            background: url("{{ url_for('static', filename='ColourSplash.jpg') }}") center center / cover no-repeat;
-            animation: zoomBackground 60s linear infinite;
-            z-index: -1;
-        }
-
-        @keyframes zoomBackground {
-            from {
-                transform: scale(1); /* Start at normal size */
-            }
-            to {
-                transform: scale(2); /* Zoom in to 200% size */
-            }
-        }
-
-        .login-container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 75px;
-            background: rgba(255, 255, 255, 1);
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 1);
-        }
-
-        .login-container h2 {
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .login-container label {
-            display: block;
-            margin-bottom: 5px;
-            margin-left: -10px; /* Move labels to the left */
-        }
-
-        .login-container input {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            margin-left: -10px; /* Move input boxes to the left */
-        }
-
-        /* Forget Password styling */
-        .forgot-password-container {
-            text-align: right;
-            margin-bottom: 10px;
-            margin-right: -20px; /* Align the forgot password link with the inputs */
-        }
-
-        .forgot-password {
-            color: #007BFF;
-            text-decoration: none;
-            font-size: 14px;
-        }
-
-        .forgot-password:hover {
-            text-decoration: underline;
-        }
-
-        .login-container button {
-            width: 100%;
-            padding: 10px;
-            background: #007BFF;
-            border: none;
-            color: white;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        .login-container button:hover {
-            background: #0056b3;
-        }
-
-        /* Logo Styling */
-        .logo {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            width: 100px; /* Adjust as needed */
-            cursor: pointer;
-        }
-    </style>
 </head>
 <body>
-    <!-- Logo -->
-    <a href="/">
-        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="logo">
-    </a>
-
-    <div class="background"></div>
     <div class="login-container">
-        <h2>Login</h2>
-        <form method="POST" action="/login">
-            <label for="username">Username</label>
-            <input type="text" id="username" name="username" required>
-            
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" required>
+        <div class="login-box">
+            <h1>Sign In</h1>
+            <form action="/login" method="POST">
+                <div class="input-group">
+                    <input type="text" id="username" name="username" placeholder = "Username" required>
+                </div>
 
-            <div class="forgot-password-container">
-                <a href="#" class="forgot-password">Forgot Password?</a>
+                <div class="input-group">
+                    <input type="password" id="password" name="password" placeholder="Password" required>
+                </div>
+                <button type="submit" class="login-btn">Sign In</button>
+                <div class="support-section">
+                    <div class="remember-me">
+                        <input type="checkbox" id="remember" name="remember">
+                        <label for="remember">Remember me</label>
+                    </div>
+                    <a href="#" class="help-link">Need help?</a>
+                </div>
+            </form>
+            <div class="signup-section">
+                <p>New to Renting? <a href="#">Sign up now.</a></p>
             </div>
-            
-            <button type="submit">Login</button>
-        </form>
+        </div>
     </div>
 </body>
 </html>

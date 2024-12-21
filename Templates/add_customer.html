@@ -1,35 +1,129 @@
-<!-- add_customer.html -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add New Customer</title>
+    <style>
+        /* Base styling */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: montserrat;
+            background: url("{{ url_for('static', filename='images/Blue_Lightning.gif') }}") no-repeat center center fixed;
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Form container styling */
+        .form-container {
+            background-color: rgba(200, 200, 200, 0.9);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        /* Header styling */
+        .form-header {
+            font-size: 36px; /* Increased font size */
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        /* Form group styling */
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .form-group label {
+            font-size: 16px;
+            color: #333;
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        /* Button styling */
+        .buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+
+        .buttons button {
+            padding: 10px 20px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 45%;
+        }
+
+        .save-btn {
+            background-color: #333;
+            color: white;
+        }
+
+        .save-btn:hover {
+            background-color: rgb(0, 132, 255);
+        }
+
+        .cancel-btn {
+            background-color: #f0f0f0;
+            color: #555;
+        }
+
+        .cancel-btn:hover {
+            background-color: #ccc;
+        }
+    </style>
 </head>
 <body>
-    {% with messages = get_flashed_messages(with_categories=True) %}
-        {% if messages %}
-            <div>
-                {% for category, message in messages %}
-                    <p class="{{ category }}">{{ message }}</p>
-                {% endfor %}
+    <div class="form-container">
+        <div class="form-header">Adding New Customer</div>
+        <form action="/add_customer" method="POST">
+            <div class="form-group">
+                <label for="firstName">First Name</label>
+                <input type="text" id="firstName" name="Customer_FirstName" placeholder="Enter First Name">
             </div>
-        {% endif %}
-    {% endwith %}
-    <h1>Adding New Customer</h1>
-    <form action="/add_customer" method="POST">
-        <label for="Customer_FirstName">Customer First Name:</label>
-        <input type="text" id="Customer_FirstName" name="Customer_FirstName" required><br>
-        <label for="Customer_LastName">Customer Last Name:</label>
-        <input type="text" id="Customer_LastName" name="Customer_LastName" required><br>
-        <label for="Customer_Email">Customer Email:</label>
-        <input type="email" id="Customer_Email" name="Customer_Email" required><br>
-        <label for="Customer_PhoneNumber">Customer Phone Number:</label>
-        <input type="tel" id="Customer_PhoneNumber" name="Customer_PhoneNumber" required><br>
-        <label for="Customer_Address">Customer Address:</label>
-        <input type="text" id="Customer_Address" name="Customer_Address" required><br>
-        <button type="submit">Add Customer Details</button>
-    </form>
+            <div class="form-group">
+                <label for="lastName">Last Name</label>
+                <input type="text" id="lastName" name="Customer_LastName" placeholder="Enter Last Name">
+            </div>
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="Customer_Email" placeholder="Enter Email Address">
+            </div>
+            <div class="form-group">
+                <label for="mobile">Mobile Number</label>
+                <input type="tel" id="mobile" name="Customer_PhoneNumber" placeholder="Enter Mobile Number">
+            </div>
+            <div class="form-group">
+                <label for="address">Address</label>
+                <input type="text" id="address" name="Customer_Address" placeholder="Enter Address">
+            </div>
+            <div class="buttons">
+                <button type="submit" class="save-btn">Add Customer</button>
+                <button type="button" class="cancel-btn" onclick="window.location.href='/'">Cancel</button>
+            </div>
+        </form>
+    </div>
 </body>
 </html>

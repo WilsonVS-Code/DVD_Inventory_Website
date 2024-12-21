@@ -17,6 +17,9 @@
         th {
             background-color: #f2f2f2;
         }
+        .error {
+            color: red;
+        }
     </style>
 </head>
 <body>
@@ -28,14 +31,9 @@
     </form>
 
     <div id="customer_info" style="display: none;">
+        <h3>Customer ID: <span id="customer_id"></span></h3>
         <h3>Customer Name: <span id="customer_name"></span></h3>
         <h3>Phone Number: <span id="phone_number_display"></span></h3>
-    </div>
-
-    <div id="movie_scan" style="display: none;">
-        <h2>Scan DVD Barcode</h2>
-        <input type="text" id="barcode" placeholder="Enter movie barcode">
-        <button type="button" onclick="scanMovie()">Scan</button>
     </div>
 
     <h2>Rented DVDs</h2>
@@ -46,7 +44,9 @@
                 <th>Movie Title</th>
                 <th>Barcode</th>
                 <th>Quantity</th>
+                <th>Returned Quantity</th>
                 <th>Status</th>
+                <th>Rental Date</th>
                 <th>Return Date</th>
             </tr>
         </thead>
@@ -55,15 +55,48 @@
         </tbody>
     </table>
 
-    <button id="return_button" style="display: none;" onclick="processReturn()">Return DVDs</button>
+    <div id="movie_scan" style="display: none;">
+        <h2>Scan DVD Barcode</h2>
+        <input type="text" id="barcode" placeholder="Enter movie barcode">
+        <input type="number" id="return_quantity" placeholder="Enter quantity to return" min="1" value="1">
+        <button type="button" onclick="scanMovie()">Scan</button>
+        <p class="error" id="error_message" style="display: none;"></p>
+    </div>
+
+    <h2>Scanned DVDs for Return</h2>
+    <table id="scanned_table" style="display: none;">
+        <thead>
+            <tr>
+                <th>Rental ID</th>
+                <th>Movie Title</th>
+                <th>Barcode</th>
+                <th>Quantity</th>
+                <th>Returned Quantity</th>
+                <th>Status</th>
+                <th>Rental Date</th>
+                <th>Return Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Dynamically filled with scanned movie details -->
+        </tbody>
+    </table>
+
+    <!-- New Returning DVDs Button -->
+    <button id="returning_dvds_button" style="display: none;" onclick="processReturn()">Returning DVDs</button>
 
     <script>
-        function scanMovie() {
-            const barcode = document.getElementById('barcode').value;
-            const formData = new FormData();
-            formData.append('barcode', barcode);
+        let scannedMovies = {};  // Store scanned movies and their quantities
 
-            fetch('/scan_rental', {
+        // Fetch customer and rental details
+        document.getElementById('customerForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const phone_number = document.getElementById('phone_number').value;
+            const formData = new FormData();
+            formData.append('phone_number', phone_number);
+
+            fetch('/get_rental_details', {
                 method: 'POST',
                 body: formData
             })
@@ -72,12 +105,18 @@
                 if (data.error) {
                     alert(data.error);
                 } else {
+                    // Display customer information
+                    document.getElementById('customer_info').style.display = "block";
+                    document.getElementById('customer_id').innerText = data.customer_id;
+                    document.getElementById('customer_name').innerText = data.customer_name;
+                    document.getElementById('phone_number_display').innerText = phone_number;
+
+                    // Display rented DVDs
                     const table = document.getElementById('rental_table');
                     table.style.display = "block";
-
                     const tbody = table.querySelector('tbody');
-                    tbody.innerHTML = ''; // Clear any existing rows
-                    
+                    tbody.innerHTML = '';
+
                     data.rentals.forEach(rental => {
                         const row = document.createElement('tr');
                         row.innerHTML = `
@@ -85,39 +124,178 @@
                             <td>${rental.movie_title}</td>
                             <td>${rental.barcode}</td>
                             <td>${rental.quantity}</td>
+                            <td>${rental.returned_quantity}</td>
                             <td>${rental.status}</td>
+                            <td>${rental.rental_date}</td>
                             <td>${rental.return_date}</td>
                         `;
                         tbody.appendChild(row);
                     });
 
-                    document.getElementById('return_button').style.display = "block";
+                    document.getElementById('movie_scan').style.display = "block";
                 }
+            })
+            .catch(error => {
+                alert('Error fetching rental details: ' + error);
+            });
+        });
+
+        // Add scanned movie to the list
+        function scanMovie() {
+            const barcode = document.getElementById('barcode').value;
+            let quantityToReturn = parseInt(document.getElementById('return_quantity').value, 10);
+
+            // Clear any previous error message
+            document.getElementById('error_message').style.display = "none";
+
+            if (barcode && quantityToReturn > 0) {
+                // Get all rows from the rental table
+                const rentalRows = document.querySelectorAll('#rental_table tbody tr');
+                let totalToReturn = quantityToReturn;  // Track how many we still need to process
+                let totalBorrowedForMovie = 0;  // Track total quantity borrowed for the movie
+                let totalReturnedForMovie = 0;  // Track total quantity already returned for the movie
+                let movieFound = false;
+
+                // Sort rental rows by rental date (FIFO - oldest first)
+                const sortedRows = Array.from(rentalRows).sort((rowA, rowB) => {
+                    const dateA = new Date(rowA.children[6].innerText);  // Rental Date
+                    const dateB = new Date(rowB.children[6].innerText);
+                    return dateA - dateB;
+                });
+
+                sortedRows.forEach(row => {
+                    const rowBarcode = row.children[2].innerText;
+
+                    if (rowBarcode === barcode) {
+                        movieFound = true;
+                        const rentalID = row.children[0].innerText;
+                        const currentQuantity = parseInt(row.children[3].innerText);  // Borrowed quantity
+                        const returnedQuantity = parseInt(row.children[4].innerText);  // Already returned quantity
+
+                        // Track total borrowed and returned quantities for the movie
+                        totalBorrowedForMovie += currentQuantity;
+                        totalReturnedForMovie += returnedQuantity;
+                    }
+                });
+
+                if (!movieFound) {
+                    alert('Movie barcode not found in rentals.');
+                    return;
+                }
+
+                // Validate return quantity
+                if (totalReturnedForMovie + quantityToReturn > totalBorrowedForMovie) {
+                    // Display error if return quantity exceeds total borrowed
+                    document.getElementById('error_message').innerText = `You cannot return more DVDs than you have borrowed. Borrowed: ${totalBorrowedForMovie}, Already Returned: ${totalReturnedForMovie}.`;
+                    document.getElementById('error_message').style.display = "block";
+                    return;
+                }
+
+                // Process the return across multiple rental IDs if necessary
+                sortedRows.forEach(row => {
+                    const rowBarcode = row.children[2].innerText;
+
+                    if (rowBarcode === barcode && totalToReturn > 0) {
+                        const rentalID = row.children[0].innerText;
+                        const currentQuantity = parseInt(row.children[3].innerText);
+                        const returnedQuantity = parseInt(row.children[4].innerText);
+
+                        // Determine how much can be returned for this rental (without exceeding borrowed quantity)
+                        const availableToReturn = currentQuantity - returnedQuantity;
+                        const returnForThisRow = Math.min(availableToReturn, totalToReturn);
+
+                        // Only process if there's quantity to return
+                        if (returnForThisRow > 0) {
+                            // Update the scanned movies object for this rental ID
+                            if (!scannedMovies[barcode]) {
+                                scannedMovies[barcode] = {};
+                            }
+
+                            if (!scannedMovies[barcode][rentalID]) {
+                                scannedMovies[barcode][rentalID] = {
+                                    rental_id: rentalID,
+                                    movie_title: row.children[1].innerText,
+                                    barcode: rowBarcode,
+                                    quantity: currentQuantity,
+                                    returned_quantity: 0,
+                                    status: row.children[5].innerText,
+                                    rental_date: row.children[6].innerText,
+                                    return_date: row.children[7].innerText
+                                };
+                            }
+
+                            scannedMovies[barcode][rentalID].returned_quantity += returnForThisRow;
+
+                            // Update the total remaining quantity to return
+                            totalToReturn -= returnForThisRow;
+
+                            // Update the original table's returned quantity column dynamically
+                            row.children[4].innerText = parseInt(row.children[4].innerText) + returnForThisRow;
+                        }
+                    }
+                });
+
+                // Refresh the scanned DVDs for return table
+                updateScannedTable();
+
+                // Display the returning DVDs button once a movie is scanned
+                document.getElementById('returning_dvds_button').style.display = "block";
+            } else {
+                alert('Please enter a valid movie barcode and return quantity.');
+            }
+        }
+
+        // Update the Scanned DVDs for Return table
+        function updateScannedTable() {
+            const table = document.getElementById('scanned_table');
+            table.style.display = "block";
+            const tbody = table.querySelector('tbody');
+            tbody.innerHTML = '';
+
+            Object.keys(scannedMovies).forEach(barcode => {
+                Object.keys(scannedMovies[barcode]).forEach(rentalID => {
+                    const movie = scannedMovies[barcode][rentalID];
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${movie.rental_id}</td>
+                        <td>${movie.movie_title}</td>
+                        <td>${movie.barcode}</td>
+                        <td>${movie.quantity}</td>
+                        <td>${movie.returned_quantity}</td>
+                        <td>${movie.status}</td>
+                        <td>${movie.rental_date}</td>
+                        <td>${movie.return_date}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
             });
         }
 
+        // Process DVD returns
         function processReturn() {
+            const returnData = [];
+            Object.keys(scannedMovies).forEach(barcode => {
+                Object.keys(scannedMovies[barcode]).forEach(rentalID => {
+                    returnData.push(scannedMovies[barcode][rentalID]);
+                });
+            });
+
             fetch('/process_return', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    rentals: Array.from(document.querySelectorAll('#rental_table tbody tr')).map(row => {
-                        const cells = row.querySelectorAll('td');
-                        return {
-                            rental_id: cells[0].innerText,
-                            barcode: cells[2].innerText
-                        };
-                    })
-                })
+                body: JSON.stringify({ returns: returnData })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('Return Process Completed Successfully!');
+                    alert('DVDs successfully returned!');
                     location.reload();
                 } else {
-                    alert('Error during return process: ' + data.error);
+                    alert('Error processing return: ' + data.error);
                 }
+            })
+            .catch(error => {
+                alert('Error processing return: ' + error);
             });
         }
     </script>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netflix Login</title>
+    <link rel="stylesheet" href="stylestest.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-box">
+            <h1>Sign In</h1>
+            <form action="/login" method="POST">
+                <div class="input-group">
+                    <input type="email" id="email" name="email" placeholder="Email or phone number" required>
+                </div>
+                <div class="input-group">
+                    <input type="password" id="password" name="password" placeholder="Password" required>
+                </div>
+                <button type="submit" class="login-btn">Sign In</button>
+                <div class="support-section">
+                    <div class="remember-me">
+                        <input type="checkbox" id="remember" name="remember">
+                        <label for="remember">Remember me</label>
+                    </div>
+                    <a href="#" class="help-link">Need help?</a>
+                </div>
+            </form>
+            <div class="signup-section">
+                <p>New to Renting? <a href="#">Sign up now.</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

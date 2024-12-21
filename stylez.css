@@ -1,0 +1,181 @@
+/* Reset default styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #1e1e2d;
+    color: #fff;
+}
+
+/* Header styling */
+.top-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #353547;
+    padding: 10px 20px;
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+}
+
+.logo-btn {
+    background-color: transparent;
+    border: none;
+    font-size: 24px;
+    color: #fff;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.logo-btn:hover {
+    color: #00c48c;
+}
+
+.search-bar {
+    flex-grow: 1;
+    margin: 0 20px;
+    padding: 10px;
+    border-radius: 5px;
+    border: none;
+    background-color: #2b2b3d;
+    color: #fff;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    position: relative; /* Needed for dropdown positioning */
+    cursor: pointer;
+}
+
+.user-profile .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.user-profile span {
+    font-size: 16px;
+    color: #fff;
+}
+
+/* Dropdown menu styling */
+.dropdown-menu {
+    display: none; /* Hidden by default */
+    position: absolute;
+    top: 60px; /* Adjust dropdown placement */
+    right: 0;
+    background-color: #2b2b3d;
+    border-radius: 5px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dropdown-menu a {
+    display: block;
+    padding: 10px 20px;
+    color: #fff;
+    text-decoration: none;
+    background-color: #353547;
+}
+
+.dropdown-menu a:hover {
+    background-color: #00c48c;
+}
+
+/* Show dropdown on active */
+.user-profile.active .dropdown-menu {
+    display: block;
+}
+
+/* Container styling */
+.container {
+    display: flex;
+    height: calc(100vh - 60px); /* Full height minus header height */
+    margin-top: 60px; /* Ensures content starts below the fixed header */
+}
+
+/* Sidebar styling */
+.sidebar {
+    background-color: #2b2b3d;
+    width: 150px;
+    padding: 20px;
+}
+
+.sidebar nav ul {
+    list-style-type: none;
+}
+
+.sidebar nav ul li {
+    margin-bottom: 20px;
+}
+
+.sidebar nav ul li a {
+    text-decoration: none;
+    color: #888;
+    font-size: 18px;
+}
+
+.sidebar nav ul li a:hover {
+    color: #fff;
+}
+
+/* Main content styling */
+.content {
+    flex-grow: 1;
+    padding: 20px;
+}
+
+/* Movie grid and cards */
+.movie-grid {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.movie-card {
+    background-color: #353547;
+    padding: 10px;
+    width: 150px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.movie-card img {
+    width: 100%;
+    border-radius: 10px;
+}
+
+.movie-card h3 {
+    margin-top: 10px;
+    font-size: 18px;
+    color: #fff;
+}
+
+.movie-card p {
+    font-size: 14px;
+    color: #888;
+}
+
+/* Button styling */
+.search-add button {
+    background-color: #00c48c;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.search-add button:hover {
+    background-color: #00a374;
+}

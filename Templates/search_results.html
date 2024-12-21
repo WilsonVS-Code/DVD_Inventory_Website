@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Select Movie</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: montserrat;
+            background: url("{{ url_for('static', filename='images/tech_board.gif') }}") no-repeat center center fixed; /* Set GIF background */
+            background-size: cover; /* Cover the entire background */
+        }
+
+        /* Styling for the header */
+        header {
+            background-color: black;
+            padding: 15px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center; /* Center items vertically */
+            height: 60px; /* Set height of the header */
+        }
+
+        /* Home button */
+        .home-button {
+            background-color: Black;
+            color: white;
+            padding: 10px 20px; /* Size of the button */
+            text-decoration: none;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-size: 18px; /* Font size for Home */
+        }
+
+        .home-button:hover {
+            background-color: rgb(0, 132, 255);
+        }
+
+        /* Search bar styling */
+        .search-bar {
+            padding: 8px;
+            width: 200px; /* Width of the search bar */
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            margin-left: 15px; /* Space between the button and search bar */
+        }
+
+        .center {
+            display: flex;
+            text-align: center;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* White container for search results */
+        .results-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 800px; /* Increased width for better layout */
+            text-align: left;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        /* Card layout for search results */
+        .movie-card {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .movie-info {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .select-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .select-btn:hover {
+            background-color: #0056b3;
+        }
+
+        #loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .ring {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            animation: ring 2s linear infinite;
+        }
+
+        @keyframes ring {
+            0% {
+                transform: rotate(0deg);
+                box-shadow: 1px 5px 2px #e65c00;
+            }
+            50% {
+                transform: rotate(180deg);
+                box-shadow: 1px 5px 2px #18b201;
+            }
+            100% {
+                transform: rotate(360deg);
+                box-shadow: 1px 5px 2px #0456c8;
+            }
+        }
+
+        .ring:before {
+            position: absolute;
+            content: '';
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 100%;
+            border-radius: 50%;
+            box-shadow: 0 0 5px rgba(255, 255, 255, .3);
+        }
+
+        span {
+            color: #737373;
+            font-size: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            line-height: 200px;
+            animation: text 3s ease-in-out infinite;
+        }
+
+        @keyframes text {
+            50% {
+                color: black;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <button class="home-button" onclick="window.location.href='/'">Home</button>
+        <input type="text" class="search-bar" placeholder="Search...">
+    </header>
+
+    <div class="center">
+        <div class="results-container">
+            <h1>Search Results</h1>
+            <form id="movieSelectionForm" action="/add_selected_movie" method="POST">
+                {% for movie in search_results %}
+                    <div class="movie-card">
+                        <div class="movie-info">
+                            <p>{{ movie.Title }} ({{ movie.Year }})</p>
+                            <p>Directed by {{ movie.Director }}</p>
+                        </div>
+                        <button type="button" class="select-btn" data-movie-id="{{ movie.Movie_ID }}" data-barcode="{{ movie_barcode }}">Select</button>
+                    </div>
+                {% endfor %}
+            </form>
+        </div>
+    </div>
+
+    <div id="loading">
+        <div class="center">
+            <div class="ring"></div>
+            <span>Loading...</span>
+        </div>
+    </div>
+
+    <script>
+        // Attach a click event listener to each Select button
+        document.querySelectorAll('.select-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                // Show loading animation and change background color to darker grey
+                document.getElementById('loading').style.display = 'flex'; 
+                document.body.style.background = 'rgba(50, 50, 50, 0.8)'; // Darker grey background
+
+                // Create a new form data object
+                const formData = new FormData();
+                formData.append('selected_movie_id', this.getAttribute('data-movie-id'));
+                formData.append('movie_barcode', this.getAttribute('data-barcode'));
+
+                // Make the AJAX POST request
+                fetch('/add_selected_movie', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.text())
+                .then(data => {
+                    // Hide loading animation
+                    document.getElementById('loading').style.display = 'none'; 
+                    document.body.style.background = 'white'; // Reset background to white
+
+                    // Redirect to Add Movie page after success
+                    window.location.href = '/add_movie';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('loading').style.display = 'none'; 
+                    document.body.style.background = 'white'; // Reset background to white
+                    alert('Error processing request.');
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>

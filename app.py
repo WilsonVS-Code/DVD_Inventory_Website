@@ -1,10 +1,13 @@
 # app.py
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from datetime import date, timedelta
+from collections import defaultdict
 import imdb
 import pyodbc
 import random
 import string
+import requests
+
 
 app = Flask(__name__, static_url_path ='/static')
 
@@ -33,26 +36,6 @@ def index():
     error_message = request.args.get('error_message', '')
     return render_template('login.html', error_message=error_message)
     
-## DONT DELETE THIS CODE TILL IT IS RESOLVED 
-# # Retrieving Username and Password Inputs and Checking with the Database before moving to the next page.
-# @app.route('/login', methods=['POST'])
-# def login():
-#     username = request.form.get('username')
-#     password = request.form.get('password')
-    
-#     # Check if the provided username and password match in the Access database
-#     cursor.execute("SELECT * FROM Staff WHERE Staff_Username = ? AND Staff_Password = ?",username, password)
-#     user = cursor.fetchone()
-
-#     if user:
-#     # Successful login, redirect to a new page or perform additional actions
-#         # The Name of the user is located at the second column of the Users table (index 1)
-#         session['user_name'] = user[1]
-#         return redirect(url_for('dashboard'))
-#     else:
-#         # Invalid credentials, redirect back to the login page with an error message
-#         error_message = 'Invalid Username and/or Password!'
-#         return redirect(url_for('index', error_message=error_message))
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -80,49 +63,134 @@ def login():
 
 # Defining the structure of the Movie Table (The structure in the database)
 class Movie:
-    def __init__(self, Movie_ID, Title, Release_Year, Director, Rating, Duration, Quantity, Movie_Barcode):
-        self.Movie_ID = Movie_ID
+    def __init__(self, Title, Release_Year, Director, Rating):
         self.Title = Title
         self.Release_Year = Release_Year
         self.Director = Director
-        self.Rating = Rating 
-        self.Duration = Duration
-        self.Quantity = Quantity
-        self.Movie_Barcode = Movie_Barcode
+        self.Rating = Rating
 
 
-# The Menu where the appropriate users can have access to.
+""" @app.route('/dashboard')
+def dashboard():
+
+    # Query to fetch movie details along with associated genres
+    query = '''
+    SELECT Movies.Movie_ID, Movies.Title, Movies.Release_Year, Movies.Rating, Genre.Genre_Name
+    FROM (Movies 
+    INNER JOIN Movie_Genre ON Movies.Movie_ID = Movie_Genre.Movie_ID)
+    INNER JOIN Genre ON Movie_Genre.Genre_ID = Genre.Genre_ID;
+    '''
+    cursor.execute(query)
+    rows = cursor.fetchall()
+
+    # Dictionary to hold movie data, grouped by Movie_ID
+    movie_data = defaultdict(lambda: {'Title': '', 'Release_Year': '', 'Rating': '', 'Genres': []})
+
+    # Process each row and group genres under their respective movies
+    for row in rows:
+        movie_id = row.Movie_ID
+        if not movie_data[movie_id]['Title']:  # Add movie details only once
+            movie_data[movie_id]['Title'] = row.Title
+            movie_data[movie_id]['Release_Year'] = row.Release_Year
+            movie_data[movie_id]['Rating'] = row.Rating
+        movie_data[movie_id]['Genres'].append(row.Genre_Name)
+
+    # Convert the dictionary to a list of movies with concatenated genres
+    movies = []
+    for movie_id, details in movie_data.items():
+        movies.append({
+            'Movie_ID': movie_id,
+            'Title': details['Title'],
+            'Release_Year': details['Release_Year'],
+            'Rating': details['Rating'],
+            'Genres': ', '.join(details['Genres'])  # Concatenate genres
+        })
+    print(movies)
+
+    # Render the dashboard template, passing the list of movies
+    return render_template('dashboard.html', movies=movies) """
+
 @app.route('/dashboard')
 def dashboard():
-    # Retrieve the users name from the session
     user_name = session.get('staff_name')
 
-    # Retrieve movie details from the database
-    cursor.execute("SELECT * FROM Movies")
-    movies = [Movie(*row) for row in cursor.fetchall()]
+    # Query to fetch movie details along with associated genres
+    query = '''
+    SELECT Movies.Movie_ID, Movies.Title, Movies.Release_Year, Movies.Rating, Genre.Genre_Name
+    FROM (Movies 
+    INNER JOIN Movie_Genre ON Movies.Movie_ID = Movie_Genre.Movie_ID)
+    INNER JOIN Genre ON Movie_Genre.Genre_ID = Genre.Genre_ID;
+    '''
+    cursor.execute(query)
+    rows = cursor.fetchall()
 
-    return render_template('dashboard.html', user_name=user_name, movies=movies)
+    # Dictionary to hold movie data, grouped by Movie_ID
+    movie_data = defaultdict(lambda: {
+        'Title': '', 'Release_Year': '', 'Rating': '', 'Genres': [], 'Poster_URL': ''
+    })
 
-# The route for Searching up Movie details from the database.
+    omdb_api_key = '87cf2b25'  # Replace with your actual OMDB API key
+
+    # Process each row and group genres under their respective movies
+    for row in rows:
+        movie_id = row.Movie_ID
+        if not movie_data[movie_id]['Title']:  # Add movie details only once
+            movie_data[movie_id]['Title'] = row.Title
+            movie_data[movie_id]['Release_Year'] = row.Release_Year
+            movie_data[movie_id]['Rating'] = row.Rating
+            
+            # Fetch poster using the OMDB API based on the movie title
+            title = row.Title
+            omdb_url = f"http://www.omdbapi.com/?t={title}&apikey={omdb_api_key}"
+            response = requests.get(omdb_url).json()
+
+            # Add the poster URL to the movie object if available, otherwise use a placeholder
+            if response['Response'] == 'True':
+                movie_data[movie_id]['Poster_URL'] = response.get('Poster', 'https://via.placeholder.com/150')
+            else:
+                movie_data[movie_id]['Poster_URL'] = 'https://via.placeholder.com/150'  # Placeholder image
+
+        # Append genres to the movie
+        movie_data[movie_id]['Genres'].append(row.Genre_Name)
+
+    # Convert the dictionary to a list of movies with concatenated genres
+    movies = []
+    for movie_id, details in movie_data.items():
+        movies.append({
+            'Movie_ID': movie_id,
+            'Title': details['Title'],
+            'Release_Year': details['Release_Year'],
+            'Rating': details['Rating'],
+            'Genres': ', '.join(details['Genres']),  # Concatenate genres
+            'Poster_URL': details['Poster_URL']  # Include the poster URL
+        })
+
+    print(movies)  # To verify the data is being fetched correctly
+
+    # Render the dashboard template, passing the list of movies
+    return render_template('dashboard.html', movies=movies)
+
+
+
 @app.route('/search_movies', methods=['GET'])
 def search_movies():
-
-    # Retrieve the users name from the session
     user_name = session.get('user_name')
-
     search_query = request.args.get('search_query', '')
 
     if search_query.isdigit():
-        # Execute a search query on the database (If Movie barcode is used)
-        cursor.execute("SELECT * FROM Movies WHERE Movie_Barcode = ?", (search_query,))
+        cursor.execute("SELECT Title, Release_Year, Director, Rating FROM Movies WHERE Movie_Barcode = ?", (search_query,))
     else:
-        # Exceute a search query on the database (if Movie name is used)
-        cursor.execute("SELECT * FROM Movies WHERE Title LIKE ?", '%' + search_query + '%')
-
+        cursor.execute("SELECT Title, Release_Year, Director, Rating FROM Movies WHERE Title LIKE ?", ('%' + search_query + '%',))
 
     search_results = [Movie(*row) for row in cursor.fetchall()]
-    # Render the template with the search results
-    return render_template('dashboard.html', user_name = user_name, movies=search_results)
+
+    # Return results as JSON
+    return jsonify([{
+        'Title': movie.Title,
+        'Release_Year': movie.Release_Year,
+        'Director': movie.Director,
+        'Rating': movie.Rating,
+    } for movie in search_results])
 
 # Define route for the "Add New Movie" page
 @app.route('/add_movie')
@@ -130,7 +198,7 @@ def add_movie():
     return render_template('add_movie.html')
 
 
-# Define route to handle form submission for adding a new movie
+""" # Define route to handle form submission for adding a new movie
 @app.route('/add_movie', methods=['POST'])
 def add_movie_post():
     # Retrieve form data
@@ -143,7 +211,66 @@ def add_movie_post():
     # Render template with movie details
     return render_template('add_movie.html', 
                            movie_details=movie_details, 
-                           movie_barcode=movie_barcode)
+                           movie_barcode=movie_barcode) """
+
+
+# Define route to handle form submission for adding a new movie
+@app.route('/add_movie', methods=['POST'])
+def add_movie_post():
+    # Retrieve form data
+    movie_name = request.form.get('movie_name')
+    movie_barcode = request.form.get('movie_barcode')
+
+    # Perform a search for the movie using IMDb
+    ia = imdb.IMDb()
+    movies = ia.search_movie(movie_name)
+
+    # Limit the number of search results (e.g., show top 10 movies)
+    search_results = []
+    max_results = 10  # Adjust this number as needed
+
+    for movie in movies[:max_results]:
+        # Fetch more detailed information for each movie to get the director
+        ia.update(movie, info=['main'])
+
+        # Now extract the director information
+        director = movie['director'][0]['name'] if 'director' in movie else 'Unknown'
+
+        # Collect essential movie info
+        search_results.append({
+            "Movie_ID": movie.movieID,
+            "Title": movie['title'],
+            "Year": movie.get('year', 'N/A'),
+            "Director": director
+        })
+
+        print(search_results)
+
+    # Render the template with the search results
+    return render_template('search_results.html', search_results=search_results, movie_barcode=movie_barcode)
+
+
+
+# Define route to handle selection of a movie and add it to the database
+@app.route('/add_selected_movie', methods=['POST'])
+def add_selected_movie():
+    selected_movie_id = request.form.get('selected_movie_id')
+    print(selected_movie_id)
+    movie_barcode = request.form.get('movie_barcode')
+    print(movie_barcode)
+
+    # Fetch full movie details by movie ID from IMDb
+    ia = imdb.IMDb()
+    movie = ia.get_movie(selected_movie_id)
+    print(movie)
+
+    # Insert movie into the database (using your existing logic)
+    movie_details = insert_or_update_movie_details(movie_barcode, selected_movie_id)
+
+    # Render the final confirmation page or return success message
+    return render_template('add_movie.html', movie_details=movie_details, movie_barcode=movie_barcode)
+
+
 
 
 # Define route for the "Add New Customer" page
@@ -173,7 +300,7 @@ def add_customer_post():
         hashed_password = hashlib.sha256(Customer_Password.encode()).hexdigest()  # Example hash with SHA-256
 
         # Insert customer details into the database
-        cursor.execute("INSERT INTO Customer (Customer_FirstName, Customer_LastName, Customer_Email, Customer_PhoneNumber, Customer_Address, Customer_Password) VALUES (?, ?, ?, ?, ?, ?)", 
+        cursor.execute("INSERT INTO Customers (Customer_FirstName, Customer_LastName, Customer_Email, Customer_PhoneNumber, Customer_Address, Customer_Password) VALUES (?, ?, ?, ?, ?, ?)", 
                        (Customer_FirstName, Customer_LastName, Customer_Email, Customer_PhoneNumber, Customer_Address, hashed_password))
         conn.commit()
 
@@ -407,29 +534,32 @@ def get_rental_details():
             print("Phone Number Entered:", phone_number)  # DEBUG: Check phone number input
 
             # Fetch customer details based on phone number
-            cursor.execute("SELECT Customer_ID, Customer_FirstName, Customer_LastName FROM Customers WHERE Phone_Number = ?", (phone_number,))
+            cursor.execute("SELECT Customer_ID, Customer_FirstName, Customer_LastName FROM Customers WHERE Customer_PhoneNumber = ?", (phone_number,))
             customer = cursor.fetchone()
             print("Customer Fetched:", customer)  # DEBUG: Check if customer is fetched
 
             if not customer:
-                return render_template('rental_details.html', error='Customer not found')
+                return jsonify({'error': 'Customer not found'})  # Return JSON error message
 
+            # Check if the customer details are retrieve sperately correctly (ALL GOOD)
             customer_id = customer[0]
-            customer_name = customer[1]
+            print(customer_id)
+            customer_name = f"{customer[1]} {customer[2]}"
+            print(customer_name)
 
             # Fetch all active rentals for this customer
             cursor.execute("""
                 SELECT Rentals.Rental_ID, Rental_Details.Movie_Title, Rental_Details.Movie_Barcode, Rental_Details.Quantity, 
-                       Rental_Details.Status, Rentals.Return_Date
+                       Rental_Details.Status, Rentals.Rental_Date, Rentals.Return_Date, Rental_Details.Returned_Quantity
                 FROM Rentals
                 INNER JOIN Rental_Details ON Rentals.Rental_ID = Rental_Details.Rental_ID
-                WHERE Rentals.Customer_ID = ? AND Rental_Details.Status != 'Completed'
+                WHERE Rentals.Customer_ID = ? AND Rental_Details.Status <> 'Completed'
             """, (customer_id,))
             rentals = cursor.fetchall()
             print("Rentals Fetched:", rentals)  # DEBUG: Check if rentals are fetched
 
             if not rentals:
-                return render_template('rental_details.html', error='No active rentals found for this customer')
+                return jsonify({'error': 'No active rentals found for this customer'})  # Return JSON error
 
             rental_data = [
                 {
@@ -438,19 +568,23 @@ def get_rental_details():
                     'barcode': rental[2],
                     'quantity': rental[3],
                     'status': rental[4],
-                    'return_date': rental[5]
+                    'rental_date': rental[5],
+                    'return_date': rental[6],
+                    'returned_quantity': rental[7]
                 }
                 for rental in rentals
             ]
 
-            # Render the HTML template and pass the customer and rental data to it
-            return render_template('returning_movie.html', customer_name=customer_name, phone_number=phone_number, rentals=rental_data)
+            # Return JSON response with customer and rental data
+            return jsonify({'customer_id': customer_id, 'customer_name': customer_name, 'rentals': rental_data})
+
 
         except Exception as e:
             print("Error fetching rental details:", e)  # DEBUG: Error log
-            return render_template('returning_movie.html', error='Failed to retrieve rental details')
+            return jsonify({'error': 'Failed to retrieve rental details'})  # Return JSON error
 
-    return render_template('returning_movie.html')  # Render the template initially without any data
+    # For GET request or initial page load, render the HTML template
+    return render_template('returning_movie.html')
 
 
 
@@ -458,35 +592,79 @@ def get_rental_details():
 @app.route('/process_return', methods=['POST'])
 def process_return():
     try:
-        rental_data = request.json.get('rentals', [])
+        rental_data = request.json.get('returns', [])  # Only the rentals to be returned
+        print(rental_data)
 
+        # Looping through to get the movie information we need to process returns (rental ID, barcode and returned quantity)
         for rental in rental_data:
             rental_id = rental['rental_id']
+            print(rental_id)
             barcode = rental['barcode']
+            print(barcode)
+            returned_quantity = rental['returned_quantity']
+            print(returned_quantity) # already showing the amount to returned NOW (extracted from the Scanned DVD table)
 
-            # Mark the DVD as returned (status = Completed)
+            # Fetch the current rental details (Getting the Returned Quantity and Quantity borrowed for a given movie under a rental_id)
             cursor.execute("""
-                UPDATE Rental_Details
-                SET Status = 'Completed'
+                SELECT Quantity, Returned_Quantity FROM Rental_Details
                 WHERE Rental_ID = ? AND Movie_Barcode = ?
             """, (rental_id, barcode))
+            result = cursor.fetchone()
+            print(f"Result: {result}")
 
-            # Check if all movies in this rental are completed
+            if result:
+                quantity, returned_qty = result
+                new_returned_qty = min(returned_qty + returned_quantity, quantity)
+                print(new_returned_qty)
+
+                # Update the returned quantity and status, including the Actual_Return_Date in Rental_Details
+                cursor.execute("""
+                    UPDATE Rental_Details
+                    SET Returned_Quantity = ?, 
+                        Status = IIF(? >= Quantity, 'Completed', Status),
+                        Actual_Return_Date = IIF(? >= Quantity, ?, Actual_Return_Date)
+                    WHERE Rental_ID = ? AND Movie_Barcode = ?
+                """, (new_returned_qty, new_returned_qty, new_returned_qty, date.today(), rental_id, barcode))
+
+
+            # Check if all items in this rental are fully returned
             cursor.execute("""
                 SELECT COUNT(*) FROM Rental_Details
-                WHERE Rental_ID = ? AND Status != 'Completed'
+                WHERE Rental_ID = ? AND Status <> 'Completed'
             """, (rental_id,))
             remaining_movies = cursor.fetchone()[0]
 
-            # Update the Rental Status
+            # Update the overall Rental Status if necessary
             if remaining_movies == 0:
-                cursor.execute("UPDATE Rentals SET Rental_Status = 'Completed' WHERE Rental_ID = ?", (rental_id,))
-            else:
                 cursor.execute("""
-                    UPDATE Rentals SET Rental_Status = CASE 
-                        WHEN Return_Date < ? THEN 'Overdue' ELSE 'Due' END
+                    UPDATE Rentals 
+                    SET Status = 'Completed', 
+                        Actual_Return_Date = ?
                     WHERE Rental_ID = ?
                 """, (date.today(), rental_id))
+            
+            
+            else:
+                cursor.execute("""
+                    UPDATE Rentals 
+                    SET Status = IIF(Return_Date < ?, 'Overdue', Status) 
+                    WHERE Rental_ID = ?
+                """, (date.today(), rental_id))
+
+            # Update Inventory availability by increasing it by 1 for each returned DVD
+            cursor.execute("""
+                UPDATE Inventory
+                SET Inventory_Availability = Inventory_Availability + 1
+                WHERE Movie_Barcode = ?
+            """, (barcode,))
+
+
+            # Check if Inventory_Availability > 0, and update Availability_Status
+            cursor.execute("""
+                UPDATE Inventory
+                SET Availability_Status = IIF(Inventory_Availability > 0, 'Available', Availability_Status)
+                WHERE Movie_Barcode = ?
+            """, (barcode,))
 
         conn.commit()
 
@@ -496,31 +674,6 @@ def process_return():
         conn.rollback()  # Rollback if error occurs
         print("Error during return process:", e)
         return jsonify({'error': 'Failed to process return'})
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 # Function to update the rental Status in the Rental Databases
@@ -545,12 +698,12 @@ def update_rental_status(rental_id):
             status = movie[2]
 
             if status != 'Completed':
-                # Check if the movie is overdue or due
+                # Check if the movie is overdue or Rented
                 if return_date < today:
-                    new_status = 'Overdue'
+                    new_status = 'Rent Overdue'
                     any_overdue = True
                 else:
-                    new_status = 'Due'
+                    new_status = 'Rented'
                     all_returned = False
 
                 # Update the status if it has changed
@@ -566,9 +719,9 @@ def update_rental_status(rental_id):
         if all_returned:
             rental_status = 'Completed'
         elif any_overdue:
-            rental_status = 'Overdue'
+            rental_status = 'Rent Overdue'
         else:
-            rental_status = 'Due'
+            rental_status = 'Rented'
 
         # Update the rental status in the Rentals table
         cursor.execute("""
@@ -595,8 +748,30 @@ def barcode_exists(movie_barcode):
     count = cursor.fetchone()[0]
     return count > 0
 
+# Function to check if a genre exists in the Genre table
+def genre_exists(genre_name):
+    cursor.execute("SELECT COUNT(*) FROM Genre WHERE Genre_Name=?", (genre_name,))
+    count = cursor.fetchone()[0]
+    return count > 0
+
+# Function to insert a new genre if it does not exist
+def insert_genre_if_not_exists(genre_name):
+    if not genre_exists(genre_name):
+        cursor.execute("INSERT INTO Genre (Genre_Name) VALUES (?)", (genre_name,))
+        conn.commit()
+
+# Function to get Genre_ID for a given genre name
+def get_genre_id(genre_name):
+    cursor.execute("SELECT Genre_ID FROM Genre WHERE Genre_Name=?", (genre_name,))
+    return cursor.fetchone()[0]
+
+# Function to insert a relationship between a movie and its genre into the Genre_Movie table
+def insert_movie_genre(movie_id, genre_id):
+    cursor.execute("INSERT INTO Movie_Genre (Movie_ID, Genre_ID) VALUES (?, ?)", (movie_id, genre_id))
+    conn.commit()
+
 # Function to update the access database by increasing qty of existing movies or insert a brand new movie into the database
-def insert_or_update_movie_details(movie_barcode, movie_name):
+def insert_or_update_movie_details(movie_barcode, imdb_movie_id):
     if barcode_exists(movie_barcode):
         # If barcode already exists, update the quantity
         cursor.execute("UPDATE Movies SET Quantity = Quantity + 1 WHERE Movie_Barcode=?", (movie_barcode,))
@@ -604,29 +779,33 @@ def insert_or_update_movie_details(movie_barcode, movie_name):
     else:
         # Perform a search for the movie
         ia = imdb.IMDb()
-        movies = ia.search_movie(movie_name)
+        movies = ia.get_movie(imdb_movie_id)
 
         # Retrieve details of the first movie
-        movie = movies[0]
-        ia.update(movie)
+        ia.update(movies)
+        print(movies)
+        print(movies['year'])
 
         # # Extracting movie details
 
         # Storing all the required movie details into a list
-        movie_details = [{"Title" : movie['title'], "Year" : movie['year'], "Rating" : float(movie['rating']),
-                            "Runtime" : int(movie['runtimes'][0]), "Director" : str(movie['director'][0]), "Genre": movie['genre']}]
+        movie_details = [{"Title" : movies['title'], "Year" : movies['year'], "Rating" : float(movies['rating']),
+                            "Runtime" : int(movies['runtimes'][0]), "Director" : str(movies['director'][0]), "Genre": movies['genres']}]
+        print(movie_details)
 
         # Getting all the movie details 
         for i in movie_details:
 
             title = i.get('Title', '')
-            release_year = i.get('Year', '')
+            release_year = i.get('Year', 0)
             director = i.get('Director', '')
-            rating = i.get('Rating', '')
-            duration = i.get('Runtime', '')
+            rating = float(i.get('Rating', 0.0))
+            duration = i.get('Runtime', 0)
+            genres = i.get('Genre', [])
             quantity = 1 
             Inventory_Quantity = 1 
             Availability_Status = "Available"
+            print(genres)
 
         # Insert movie details into the database
         cursor.execute("INSERT INTO Movies (Title, Release_Year, Director, Rating, Duration, Quantity, Movie_Barcode) VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -642,6 +821,20 @@ def insert_or_update_movie_details(movie_barcode, movie_name):
         cursor.execute("INSERT INTO Inventory (Movie_ID, Movie_Title, Movie_Barcode, Inventory_Availability, Total_Quantity, Availability_Status) VALUES (?, ?, ?, ?, ?, ?)",
                        (Movie_ID, title, movie_barcode, Inventory_Quantity, quantity, Availability_Status))
         
+
+        # Handle genres: insert if not exists, then link with the movie in Genre_Movie table
+        for genre in genres:
+            # Check if genre exists, insert if not
+            insert_genre_if_not_exists(genre)
+
+            # Get the genre ID
+            genre_id = get_genre_id(genre)
+
+            # Link the movie with the genre
+            insert_movie_genre(Movie_ID, genre_id)
+
+
+
 
     # Commit the transaction after database operations
     conn.commit()
