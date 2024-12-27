@@ -101,60 +101,58 @@
             background-color: #0056b3;
         }
 
-        #loading {
+       /* Loading overlay */
+       #loading {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.9);
             justify-content: center;
             align-items: center;
             z-index: 1000;
         }
 
+        /* Loading animation */
         .ring {
-            position: absolute;
+            position: relative;
             width: 200px;
             height: 200px;
             border-radius: 50%;
             animation: ring 2s linear infinite;
+            border: 5px solid transparent;
         }
 
-        @keyframes ring {
-            0% {
-                transform: rotate(0deg);
-                box-shadow: 1px 5px 2px #e65c00;
-            }
-            50% {
-                transform: rotate(180deg);
-                box-shadow: 1px 5px 2px #18b201;
-            }
-            100% {
-                transform: rotate(360deg);
-                box-shadow: 1px 5px 2px #0456c8;
-            }
-        }
-
-        .ring:before {
+        /* Center the "Loading..." text inside the ring */
+        .ring-text {
             position: absolute;
-            content: '';
-            left: 0;
-            top: 0;
-            height: 100%;
-            width: 100%;
-            border-radius: 50%;
-            box-shadow: 0 0 5px rgba(255, 255, 255, .3);
-        }
-
-        span {
+            top: 50%; /* Center vertically */
+            left: 50%; /* Center horizontally */
+            transform: translate(-50%, -50%); /* Adjust to account for text size */
             color: #737373;
             font-size: 20px;
             text-transform: uppercase;
             letter-spacing: 1px;
-            line-height: 200px;
-            animation: text 3s ease-in-out infinite;
+            animation: none;
+        }
+
+        /* Wrapper that contains both the rotating ring and the text */
+        .loading-wrapper {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+
+        @keyframes ring {
+            0% { transform: rotate(0deg); box-shadow: 0 0 5px rgb(255, 0, 0), 0 0 10px rgb(255, 0, 0); }
+            50% { transform: rotate(180deg); box-shadow: 0 0 5px rgba(0, 255, 0, 1), 0 0 10px rgba(0, 255, 0, 1); }
+            100% { transform: rotate(360deg); box-shadow: 0 0 5px rgba(0, 0, 255, 1), 0 0 10px rgba(0, 0, 255, 1); }
         }
 
         @keyframes text {
@@ -162,6 +160,85 @@
                 color: black;
             }
         }
+
+
+        /* Modal background For the success message*/
+        /* Modal background */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 1050; /* Above other elements */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: rgba(0, 0, 0, 0.4); /* Semi-transparent background */
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Modal content */
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            text-align: center;
+            padding: 30px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+            width: 500px; /* Increased width */
+            max-width: 95%; /* Ensure responsiveness */
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        /* Success icon */
+        .modal-icon {
+            font-size: 60px; /* Increased icon size */
+            color: green;
+            margin-bottom: 15px;
+        }
+
+        /* Modal header and body */
+        .modal-body h2 {
+            font-size: 30px; /* Larger header */
+            margin: 15px 0;
+        }
+
+        .modal-body p {
+            font-size: 18px; /* Larger text */
+            color: #555;
+        }
+
+        /* Modal footer button */
+        .modal-button {
+            background-color: #28a745;
+            color: white;
+            padding: 15px 30px; /* Increased button size */
+            border: none;
+            border-radius: 8px;
+            font-size: 18px; /* Larger button text */
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .modal-button:hover {
+            background-color: #218838;
+        }
+
+        /* Animation for the modal */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+
+
+
     </style>
 </head>
 <body>
@@ -188,27 +265,42 @@
         </div>
     </div>
 
+    <!-- Loading Overlay -->
     <div id="loading">
-        <div class="center">
+        <div class="loading-wrapper">
             <div class="ring"></div>
-            <span>Loading...</span>
+            <div class="ring-text">Loading...</div>
         </div>
     </div>
+    
+    <!-- Success Message after Movie Insertion -->
+    <div id="successModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-icon">&#10004;</span>
+            </div>
+            <div class="modal-body">
+                <h2>Awesome!</h2>
+                <p>Your movie has been added successfully.</p>
+            </div>
+            <div class="modal-footer">
+                <button id="closeModal" class="modal-button">OK</button>
+            </div>
+        </div>
+    </div>
+
 
     <script>
         // Attach a click event listener to each Select button
         document.querySelectorAll('.select-btn').forEach(button => {
             button.addEventListener('click', function() {
-                // Show loading animation and change background color to darker grey
-                document.getElementById('loading').style.display = 'flex'; 
-                document.body.style.background = 'rgba(50, 50, 50, 0.8)'; // Darker grey background
+                // Show loading animation
+                document.getElementById('loading').style.display = 'flex';
 
-                // Create a new form data object
                 const formData = new FormData();
                 formData.append('selected_movie_id', this.getAttribute('data-movie-id'));
                 formData.append('movie_barcode', this.getAttribute('data-barcode'));
 
-                // Make the AJAX POST request
                 fetch('/add_selected_movie', {
                     method: 'POST',
                     body: formData
@@ -216,20 +308,28 @@
                 .then(response => response.text())
                 .then(data => {
                     // Hide loading animation
-                    document.getElementById('loading').style.display = 'none'; 
-                    document.body.style.background = 'white'; // Reset background to white
+                    document.getElementById('loading').style.display = 'none';
 
-                    // Redirect to Add Movie page after success
-                    window.location.href = '/add_movie';
+                    // Show success modal
+                    const successModal = document.getElementById('successModal');
+                    successModal.style.display = 'flex';
+
+                    // Close modal on button click
+                    document.getElementById('closeModal').addEventListener('click', () => {
+                        successModal.style.display = 'none';
+
+                        // Redirect to Add Movie page
+                        window.location.href = '/add_movie';
+                    });
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    document.getElementById('loading').style.display = 'none'; 
-                    document.body.style.background = 'white'; // Reset background to white
+                    document.getElementById('loading').style.display = 'none';
                     alert('Error processing request.');
                 });
             });
         });
+
     </script>
 
 </body>
