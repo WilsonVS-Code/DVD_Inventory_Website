@@ -38,9 +38,9 @@
             transition: all .6s ease;
             padding-left: 20px;
         }
-
+        /* Manages the extension of sidebar (how far wide will it expand) */
         .sidebar.expanded {
-            width: 250px; /* Adjust this to expand further to the right */
+            width: 300px; /* Adjust this to expand further to the right */
         }
 
         /* This adjusts the size of the icon */
@@ -103,10 +103,10 @@
         }
         .logo p{
             margin-left: 6px;
-            font-size: 18px;
+            font-size: 28px;
         }
         .store-title {
-            font-size: 24px; /* Adjust font size of 'DVD STORE' */
+            font-size: 28px; /* Adjust font size of 'DVD STORE' */
             color: #0f0bf1; /* Set text color */
             font-weight: bold; /* Make the text bold */
             margin-left: 40px;  /* Adjust the space between the logo and the text */
@@ -158,28 +158,17 @@
         .middle-row .links a:hover{
             background-color: #fff;
             color: #333;
+            font-size: 30px;
         }
+        /* Manages the words in the sidebar */
         .middle-row li a p{
             margin-left: 12px;
             transition: all .5s ease;
+            font-size: 24px; 
+
 
         }
-        
-        .middle-row .search-bar{
-            background-color: rgba(255, 255, 255, 0.236);
-            border-radius: 10px;
-        }
-        .middle-row .search-bar input{
-            border: none;
-            outline: none;
-            background-color: transparent;
-            height: 100%;
-            color: #fff;
-            font-size: 16px;
-        }
-        ::placeholder{
-            color: #fff;
-        }
+
         .middle-row li .outter-name{
             position: absolute;
             bottom: 50%;
@@ -193,8 +182,10 @@
             transition: all .6s ease;
             opacity: 0;
         }
+        /* Manages the size of the words when hovering the side bar (when contracted) */
         .active .middle-row li:hover .outter-name{
             opacity: 1;
+            font-size: 24px;
         }
         .active .bottom-row p{
             display: none;
@@ -281,7 +272,7 @@
                 <li class="links">
                     <a href="{{ url_for('get_rental_details') }}">
                         <i class="uil uil-arrow-circle-down"></i>
-                        <p>Rental_Returns</p>
+                        <p>Rental Returns</p>
                     </a>
                     <span class="outter-name">Rental Returns</span>
                 </li>

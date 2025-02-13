@@ -43,13 +43,14 @@ def login():
     password = request.form.get('password')
     
     # Check if the provided username and password match in the Access database
-    cursor.execute("SELECT Staff_ID, Staff_FirstName FROM Staff WHERE Staff_Username = ? AND Staff_Password = ?", (username, password))
+    cursor.execute("SELECT Staff_ID, Staff_FirstName, Staff_LastName FROM Staff WHERE Staff_Username = ? AND Staff_Password = ?", (username, password))
     staff = cursor.fetchone()
 
     if staff:
         # Successful login, store staff ID and redirect to dashboard
         session['staff_id'] = staff[0]  # Access tuple elements by index
-        session['staff_name'] = staff[1]  # Access tuple elements by index
+        session['staff_firstname'] = staff[1]  # Access tuple elements by index
+        session['staff_lastname'] = staff[2]  # Staff_LastName
         return redirect(url_for('dashboard'))
     else:
         # Invalid credentials, redirect back to the login page with an error message

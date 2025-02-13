@@ -251,7 +251,7 @@
         <input type="text" class="search-bar" placeholder="Search..." id="search-input">
         <div class="user-profile" id="profile-button" aria-haspopup="true" aria-expanded="false">
             <img src="https://via.placeholder.com/40" alt="User Avatar" class="avatar">
-            <span>{{ user_name }}</span>
+            <span class="staff-name">{{ session['staff_firstname'] }} {{ session['staff_lastname'] }}</span>
             <div class="dropdown-menu" id="dropdown-menu">
                 <a href="#">Profile</a>
                 <form action="{{ url_for('logout') }}" method="POST">
@@ -260,7 +260,7 @@
             </div>
         </div>
     </header>
-
+    
     <div class="container">
         <!-- Sidebar -->
         <aside class="sidebar">

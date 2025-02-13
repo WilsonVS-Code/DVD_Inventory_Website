@@ -9,13 +9,14 @@
         /* Header styling */
         /* This is the long black rectangle on the top of the page */
         header {
-            background-color: rgb(5, 5, 34);
+            background-color: none;
             padding: 0 20px; /* Adds padding on the sides */
             color: white;
             display: flex;
             justify-content: space-between; /* Space out logo and search bar */
             align-items: center; /* Vertically align items */
             height: 80px;
+            font-size: 30px;
             transition: margin-left 0.3s ease;
             position: fixed;
             top: 0;
@@ -37,20 +38,20 @@
             border-radius: 5px; /* Rounds the corners */
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Optional: Adds a shadow */
             cursor: pointer; /* Indicates it's clickable */
-            font-size: 30px; /* Ensures readable text */
+            font-size: 40px; /* Ensures readable text */
             color: #333; /* Sets text and icon color */
         }
 
         /* Add Movie Icon Settings */
         .add-movie-top-left i {
-            font-size: 25px; /* Size of the movie icon */
+            font-size: 30px; /* Size of the movie icon */
             color: whitesmoke; /* Color of the movie icon */
         }
 
         /* Add Movie Text Settings */
         .add-movie-top-left p {
             margin: 0; /* Removes default margin from the paragraph */
-            font-size: 25px; /* Text size for "Add New Movie" */
+            font-size: 30px; /* Text size for "Add New Movie" */
             font-weight: bold; /* Optional: Makes text bold */
             color: whitesmoke;
         }
@@ -100,12 +101,14 @@
             display: flex;
             align-items: center; /* Vertically center the input field */
             justify-content: center; /* Center all child elements horizontally */
-            margin-left: 250px;
-            background-color: rgb(11, 11, 78); /* Dark gray background */
+            margin-left: 300px;
+            background-color: rgb(24, 24, 65); /* Dark gray background */
             border-radius: 20px; /* Fully rounded corners */
             padding: 8px 15px; /* Padding around the input */
             width: 600px; /* Width of the search bar */
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+            height: 100px;
+            box-shadow: none; /* Subtle shadow */
+            border: none;
         }
 
         /* Search input field */
@@ -114,10 +117,11 @@
             outline: none; /* Remove focus outline */
             background: none; /* Ensure no background color */
             color: #ddd; /* Light text color */
-            font-size: 14px; /* Font size for the input */
+            font-size: 30px; /* Font size for the input */
             width: 100%; /* Take full width of the container */
+            height: 60px;
             padding: 5px 0; /* Add padding at the top and bottom */
-            margin-top: 6px; /* Move input down slightly */
+            margin-top: 12px; /* Move input down slightly */
             position: relative;
             top: 7px;
             caret-color: #ddd; /* Set the text cursor color */
@@ -127,20 +131,21 @@
         /* Styling for the search bar icon */
         .search-bar i {
             color: #ddd; /* Icon color */
-            font-size: 18px; /* Icon size */
+            font-size: 40px; /* Icon size */
             cursor: pointer; /* Cursor style on hover */
             margin-left: 10px; /* Spacing between input and icon */
         }
 
-
+        /* It manages the sentence "Search by title or barcode...." */
         #movie-search {
             width: 100%;
             padding: 10px;
-            font-size: 16px;
+            font-size: 20px;
             border: 1px solid #ccc;
             border-radius: 5px;
         }
 
+        /* Manages the search results from the search bar */
         .search-results {
             position: absolute;
             top: calc(100% + 5px); /* Align directly below the search bar with some spacing */
@@ -151,9 +156,11 @@
             border: 1px solid #444;
             border-radius: 5px;
             max-height: 300px;
+            font-size: 25px;
             overflow-y: auto;
             z-index: 10;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+            border: none;
         }
 
         .result-item {
@@ -195,19 +202,33 @@
                 width: 100%;
             }
         }
+        /* Manages the Avatar and the display oif username on the top right corner */
+        .profile {
+            display: flex;
+            align-items: center;
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 20px;
+        }
 
-
-        .profile-avatar {
+        .avatar {
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            overflow: hidden;
+            background-color: #ccc; /* Gray background */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            color: white;
         }
 
-        .profile-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        .staff-name {
+            font-size: 24px; /* Adjust name size */
+            font-weight: bold;
+            color: white; /* Text color */
+            margin-left: 15px;
         }
 
 
@@ -255,7 +276,7 @@
         }
 
         label {
-            font-size: 18px;
+            font-size: 30px;
             color: #333;
             display: block;
             margin-bottom: 10px;
@@ -279,6 +300,7 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            font-size: 20px;
         }
 
         button:hover {
@@ -346,6 +368,7 @@
                 color: black;
             }
         }
+
     </style>
 </head>
 <body>
@@ -376,12 +399,11 @@
                 </div>
 
                 <!-- Profile Avatar Section -->
-                <div class="profile-container">
-                    <div class="profile-avatar">
-                        <img src="{{ url_for('static', filename='images/avatar.jpg') }}" alt="Profile Avatar">
-                        <i class="uil uil-bell"></i>
+                <div class="profile">
+                    <div class="avatar">
+                        <i class="fas fa-user"></i>  <!-- FontAwesome user icon -->
                     </div>
-                    <span class="username">{{ username }}</span>
+                    <span class="staff-name">{{ session['staff_firstname'] }} {{ session['staff_lastname'] }}</span>
                 </div>
             </header>
 
@@ -408,6 +430,7 @@
     </div>
 
     <script>
+        // Loading Ring Javascript
         function showLoading() {
             document.getElementById('loading').style.display = 'flex';
         }
@@ -416,6 +439,9 @@
             const loadingOverlay = document.getElementById('loading');
             loadingOverlay.style.display = 'none';
         }
+
+        // Profile Username Avatar display
+        
 
 
         // Search Bar Interactivity
