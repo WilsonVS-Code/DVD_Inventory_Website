@@ -1,0 +1,38 @@
+// Search Bar Interactivity
+        document.getElementById('movie-search').addEventListener('input', function () {
+        const query = this.value.trim();
+        const resultsContainer = document.getElementById('search-results');
+
+        if (query.length > 0) {
+            fetch(`/search_movies?search_query=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    resultsContainer.innerHTML = '';
+
+                    if (data.length === 0) {
+                        const noResults = document.createElement('div');
+                        noResults.textContent = 'No results found.';
+                        noResults.classList.add('no-results');
+                        resultsContainer.appendChild(noResults);
+                    } else {
+                        data.forEach(movie => {
+                            const resultItem = document.createElement('div');
+                            resultItem.classList.add('result-item');
+                            resultItem.innerHTML = `
+                                <div class="movie-details">
+                                    <strong>${movie.Title}</strong>
+                                    <p>${movie.Release_Year}</p>
+                                    <p>${movie.Director}</p>
+                                </div>
+                            `;
+                            resultsContainer.appendChild(resultItem);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching search results:', error);
+                });
+        } else {
+            resultsContainer.innerHTML = '';
+        }
+    });
