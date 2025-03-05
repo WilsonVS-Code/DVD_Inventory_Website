@@ -5,125 +5,462 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add New Customer</title>
     <style>
-        /* Base styling */
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: montserrat;
-            background: url("{{ url_for('static', filename='images/Blue_Lightning.gif') }}") no-repeat center center fixed;
-            background-size: cover;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
 
-        /* Form container styling */
-        .form-container {
-            background-color: rgba(200, 200, 200, 0.9);
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            width: 100%;
-            max-width: 600px;
-            text-align: center;
-            box-sizing: border-box;
-        }
+            /* Header styling */
+            /* This is the long black rectangle on the top of the page */
+            header {
+                background-color: none;
+                padding: 0 20px; /* Adds padding on the sides */
+                color: white;
+                display: flex;
+                justify-content: space-between; /* Space out logo and search bar */
+                align-items: center; /* Vertically align items */
+                height: 80px;
+                font-size: 30px;
+                transition: margin-left 0.3s ease;
+                position: fixed;
+                top: 0;
+                left: 0; /* Ensure it starts from the left */
+                z-index: 1;
+                width: 100%;
+                box-sizing: border-box; /* Avoid overflow */
+            }
 
-        /* Header styling */
-        .form-header {
-            font-size: 36px; /* Increased font size */
-            font-weight: bold;
-            margin-bottom: 20px;
-            color: #333;
-        }
+            /* The Title or Logo of the page on the top left corner */
+            .add-customer-top-left {
+                position: absolute; /* Allows precise placement */
+                top: 20px; /* Distance from the top of the screen */
+                left: 20px; /* Distance from the left of the screen */
+                display: flex; /* Aligns the icon and text in a row */
+                align-items: center; /* Vertically centers the icon and text */
+                gap: 8px; /* Adds space between the icon and text */
+                padding: 8px 12px; /* Adds spacing inside the container */
+                border-radius: 5px; /* Rounds the corners */
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Optional: Adds a shadow */
+                cursor: pointer; /* Indicates it's clickable */
+                font-size: 40px; /* Ensures readable text */
+                color: #333; /* Sets text and icon color */
+            }
 
-        /* Form group styling */
-        .form-group {
-            margin-bottom: 15px;
-            text-align: left;
-        }
+            /* Add Movie Icon Settings */
+            .add-customer-top-left i {
+                font-size: 30px; /* Size of the movie icon */
+                color: whitesmoke; /* Color of the movie icon */
+            }
 
-        .form-group label {
-            font-size: 16px;
-            color: #333;
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
+            /* Add Movie Text Settings */
+            .add-customer-top-left p {
+                margin: 0; /* Removes default margin from the paragraph */
+                font-size: 30px; /* Text size for "Add New Movie" */
+                font-weight: bold; /* Optional: Makes text bold */
+                color: whitesmoke;
+            }
 
-        .form-group input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            box-sizing: border-box;
-        }
 
-        /* Button styling */
-        .buttons {
-            display: flex;
-            justify-content: space-around;
-            margin-top: 20px;
-        }
+            /* Profile Avatar Sections */
+            .profile-container {
+                display: flex;
+                align-items: center;
+                gap: 10px; /* Space between avatar and username */
+                margin-left: 20px; /* Spacing from the search bar */
+            }
 
-        .buttons button {
-            padding: 10px 20px;
-            font-weight: bold;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            width: 45%;
-        }
+            .profile-avatar {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                overflow: hidden;
+                background-color: #ccc; /* Placeholder background */
+            }
 
-        .save-btn {
-            background-color: #333;
-            color: white;
-        }
+            .profile-avatar img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
 
-        .save-btn:hover {
-            background-color: rgb(0, 132, 255);
-        }
+            .username {
+                color: white;
+                font-size: 16px;
+                font-weight: bold;
+            }
 
-        .cancel-btn {
-            background-color: #f0f0f0;
-            color: #555;
-        }
 
-        .cancel-btn:hover {
-            background-color: #ccc;
-        }
+            /* Base styling */
+            /* Setting the background of the page */
+            body {
+                margin: 0;
+                padding: 0;
+                font-family: montserrat;
+                background-color: rgb(5, 5, 34);
+                /* background: url("{{ url_for('static', filename='images/Blue_City.jpg') }}") no-repeat center center fixed; */
+                background-size: cover;
+            }
+
+            /* Search bar container */
+            .search-bar {
+                position: relative; /* Ensure the search-results aligns to this container */
+                display: flex;
+                align-items: center; /* Vertically center the input field */
+                justify-content: center; /* Center all child elements horizontally */
+                margin-left: 320px;
+                background-color: rgb(24, 24, 65); /* Dark gray background */
+                border-radius: 20px; /* Fully rounded corners */
+                padding: 8px 15px; /* Padding around the input */
+                width: 600px; /* Width of the search bar */
+                height: 100px;
+                box-shadow: none; /* Subtle shadow */
+                border: none; 
+            }
+
+            /* Search input field */
+            .search-bar input {
+                border: none; /* Remove default border */
+                outline: none; /* Remove focus outline */
+                background: none; /* Ensure no background color */
+                color: #ddd; /* Light text color */
+                font-size: 30px; /* Font size for the input */
+                width: 100%; /* Take full width of the container */
+                height: 60px;
+                padding: 5px 0; /* Add padding at the top and bottom */
+                margin-top: 12px; /* Move input down slightly */
+                position: relative;
+                top: 7px;
+                caret-color: #ddd; /* Set the text cursor color */
+                line-height: 1.5; /* Increase line height for better spacing */
+            }
+
+            /* Styling for the search bar icon */
+            .search-bar i {
+                color: #ddd; /* Icon color */
+                font-size: 40px; /* Icon size */
+                cursor: pointer; /* Cursor style on hover */
+                margin-left: 20px; /* Spacing between input and icon */
+            }
+
+            /* It manages the sentence "Search by title or barcode...." */
+            #customer-search {
+                width: 100%;
+                padding: 10px;
+                font-size: 20px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+            }
+
+            /* Manages the search results from the search bar */
+            .search-results {
+                position: absolute;
+                top: calc(100% + 5px); /* Align directly below the search bar with some spacing */
+                left: 0;
+                width: 100%; /* Match the search bar's width */
+                background-color: #333;
+                color: #fff;
+                border: 1px solid #444;
+                border-radius: 5px;
+                max-height: 300px;
+                font-size: 25px;
+                overflow-y: auto;
+                z-index: 10;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+                border: none;
+            }
+
+            .result-item {
+                padding: 10px;
+                border-bottom: 1px solid #555;
+                cursor: pointer;
+            }
+
+            .result-item:hover {
+                background-color: #444;
+            }
+
+            .no-results {
+                padding: 10px;
+                text-align: center;
+                color: #aaa;
+                font-style: italic;
+            }
+
+
+            .movie-details {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .movie-details p {
+                margin: 2px 0;
+                font-size: 14px;
+                color: #aaa;
+            }
+
+            @media (max-width: 600px) {
+                .search-bar {
+                    width: 100%;
+                }
+
+                #movie-search,
+                .search-results {
+                    width: 100%;
+                }
+            }
+            /* Manages the Avatar and the display oif username on the top right corner */
+            .profile {
+                display: flex;
+                align-items: center;
+                position: absolute;
+                top: 20px;
+                right: 30px;
+                font-size: 20px;
+            }
+
+            .avatar {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                background-color: #ccc; /* Gray background */
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 30px;
+                color: white;
+            }
+
+            .staff-name {
+                font-size: 24px; /* Adjust name size */
+                font-weight: bold;
+                color: white; /* Text color */
+                margin-left: 15px;
+            }
+
+
+            /* Container for sidebar and content */
+            .container {
+                display: flex;
+            }
+
+            /* Main content styling */
+            .content {
+                margin-left: 250px;
+                width: 100%;
+                padding: 20px;
+                transition: margin-left 0.3s ease;
+            }
+            /* Sidebar styles */
+            .sidebar {
+                position: fixed;
+                top: 80px;
+                left: 0;
+                height: 100%;
+                width: 250px; /* Adjust as needed */
+                background-color: #333;
+                transition: width 0.3s ease;
+                z-index: 2;
+            }
+
+            /* Form container styling */
+            /* Creates the Container in the middle for inputs */
+            .form-container {
+                background-color: rgba(200, 200, 200, 0.8);
+                padding: 30px;
+                border-radius: 30px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                text-align: center;
+                width: 60%;
+                max-width: 600px;
+                margin: 250px auto 0;
+                margin-bottom: 100px;
+                transform: translateX(-25%)
+            }
+            /* The title of the container in the middle  */
+            h1 {
+                font-size: 36px;
+                color: #333;
+            }
+
+            label {
+                font-size: 30px;
+                color: #333;
+                display: block;
+                margin-bottom: 10px;
+                font-weight: bold;
+            }
+
+            input[type="text"] {
+                width: 95%;
+                padding: 10px;
+                margin-bottom: 20px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                box-sizing: border-box;
+                font-weight: bold;
+            }
+
+            input[type="email"] {
+                width: 95%;
+                padding: 10px;
+                margin-bottom: 20px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                box-sizing: border-box;
+                font-weight: bold;
+            }
+
+
+            input[type="tel"] {
+                width: 95%;
+                padding: 10px;
+                margin-bottom: 20px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                box-sizing: border-box;
+                font-weight: bold;
+            }
+
+            button {
+                padding: 10px 20px;
+                background-color: #333;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 20px;
+            }
+
+            button:hover {
+                background-color: rgb(0, 132, 255);
+                transition: background-color 0.3s ease, transform 0.3s ease;
+                transform: scale(1.05);
+            }
+
+            /* Loading overlay */
+            #loading {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.9);
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+            }
+
+            /* Loading animation */
+            .ring {
+                position: relative;
+                width: 200px;
+                height: 200px;
+                border-radius: 50%;
+                animation: ring 2s linear infinite;
+                border: 5px solid transparent;
+            }
+
+            /* Center the "Loading..." text inside the ring */
+            .ring-text {
+                position: absolute;
+                top: 50%; /* Center vertically */
+                left: 50%; /* Center horizontally */
+                transform: translate(-50%, -50%); /* Adjust to account for text size */
+                color: #737373;
+                font-size: 20px;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                animation: none;
+            }
+
+            /* Wrapper that contains both the rotating ring and the text */
+            .loading-wrapper {
+                position: relative;
+                width: 200px;
+                height: 200px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+
+
+            @keyframes ring {
+                0% { transform: rotate(0deg); box-shadow: 0 0 5px rgb(255, 0, 0), 0 0 10px rgb(255, 0, 0); }
+                50% { transform: rotate(180deg); box-shadow: 0 0 5px rgba(0, 255, 0, 1), 0 0 10px rgba(0, 255, 0, 1); }
+                100% { transform: rotate(360deg); box-shadow: 0 0 5px rgba(0, 0, 255, 1), 0 0 10px rgba(0, 0, 255, 1); }
+            }
+
+            @keyframes text {
+                50% {
+                    color: black;
+                }
+            }
+
     </style>
 </head>
 <body>
-    <div class="form-container">
-        <div class="form-header">Adding New Customer</div>
-        <form action="/add_customer" method="POST">
-            <div class="form-group">
-                <label for="firstName">First Name</label>
-                <input type="text" id="firstName" name="Customer_FirstName" placeholder="Enter First Name">
+
+    <div class="container">
+        <!-- Sidebar Section -->
+        <div class="sidebar-container" id="sidebar">
+            {% include 'sidebar.html' %}
+        </div>
+
+        <!-- Main Content Section -->
+        <div class="content" id="main-content">
+            <!-- Header Section with Search Bar connected to Sidebar -->
+            <header>
+                <div class="add-customer-top-left">
+                    <i class="uil uil-user"></i>
+                    <p>Add New Customer</p>
+                </div>
+
+
+                <div class="search-bar-container">
+                    <div class="search-bar">
+                        <input type="text" id="customer-search" placeholder="Search by Name or Phone Number">
+                        <div id="search-results" class="search-results"></div>
+                    </div>
+                </div>
+
+
+                <!-- Profile Avatar Section -->
+                <div class="profile">
+                    <div class="avatar">
+                        <i class="fas fa-user"></i>  <!-- FontAwesome user icon -->
+                    </div>
+                    <span class="staff-name">{{ session['staff_firstname'] }} {{ session['staff_lastname'] }}</span>
+                </div>
+            </header>
+
+
+            <!-- Add New Customer Table -->
+            <div class="form-container">
+                <h1>Adding New Customer</h1>
+                <br>
+                <form action="/add_customer" method="POST">
+                    <div class="form-group">
+                        <label for="firstName">First Name</label>
+                        <input type="text" id="firstName" name="Customer_FirstName" placeholder="Enter First Name">
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">Last Name</label>
+                        <input type="text" id="lastName" name="Customer_LastName" placeholder="Enter Last Name">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="Customer_Email" placeholder="Enter Email Address">
+                    </div>
+                    <div class="form-group">
+                        <label for="mobile">Mobile Number</label>
+                        <input type="tel" id="mobile" name="Customer_PhoneNumber" placeholder="Enter Mobile Number">
+                    </div>
+                    <div class="form-group">
+                        <label for="address">Home Address</label>
+                        <input type="text" id="address" name="Customer_Address" placeholder="Enter Address">
+                    </div>
+                    <div class="buttons">
+                        <button type="submit" class="save-btn">Add Customer</button>
+                        <button type="button" class="cancel-btn" onclick="window.location.href='/'">Cancel</button>
+                    </div>
+                </form>
             </div>
-            <div class="form-group">
-                <label for="lastName">Last Name</label>
-                <input type="text" id="lastName" name="Customer_LastName" placeholder="Enter Last Name">
-            </div>
-            <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" name="Customer_Email" placeholder="Enter Email Address">
-            </div>
-            <div class="form-group">
-                <label for="mobile">Mobile Number</label>
-                <input type="tel" id="mobile" name="Customer_PhoneNumber" placeholder="Enter Mobile Number">
-            </div>
-            <div class="form-group">
-                <label for="address">Address</label>
-                <input type="text" id="address" name="Customer_Address" placeholder="Enter Address">
-            </div>
-            <div class="buttons">
-                <button type="submit" class="save-btn">Add Customer</button>
-                <button type="button" class="cancel-btn" onclick="window.location.href='/'">Cancel</button>
-            </div>
-        </form>
-    </div>
 </body>
 </html>

@@ -387,15 +387,12 @@
                     <i class="uil uil-film"></i>
                     <p>Add New Movie</p>
                 </div>
-
+                <!-- Search Bar Section -->
                 <div class="search-bar-container">
                     <div class="search-bar">
                         <input type="text" id="movie-search" placeholder="Search by title or barcode...">
                         <div id="search-results" class="search-results"></div>
                     </div>
-                    
-                    
-                
                 </div>
 
                 <!-- Profile Avatar Section -->
@@ -410,6 +407,7 @@
             <!-- Add Movie Form -->
             <div class="form-container">
                 <h1>Add New Movie</h1>
+                <br>
                 <form action="/add_movie" method="POST" onsubmit="showLoading();">
                     <label for="movie_name">Movie Name</label>
                     <input type="text" id="movie_name" name="movie_name" required placeholder="Enter Movie Name">
